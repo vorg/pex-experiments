@@ -1,7 +1,7 @@
 var isBrowser = require('is-browser');
 var plask = isBrowser ? {} : require('plask');
-var d3_interpolate = require('d3-interpolate');
 var Color = require('pex-color');
+var lerp = require('lerp-array');
 
 function toLinear(color) {
     color = color.slice(0);
@@ -19,19 +19,26 @@ function toGamma(color) {
     return color;
 }
 
-function colorGradient(colors, numSteps) {
-    var gradient = [];
-    //var interpolator = ;
+function gradientInterpolate(colors, t) {
     var numStops = colors.length - 1;
-    var stepsPerStop = numSteps / numStops;
-    for(var i=0; i<numSteps; i++) {
-        var stop = Math.floor(i / stepsPerStop);
-        var t = (i / stepsPerStop) - stop;
-        var rgba = d3_interpolate.value(colors[stop], colors[stop+1])(t);
-        gradient.push(rgba.slice(0));
-    }
+    var stopF = t * numStops;
+    var stop = Math.floor(stopF);
+    var k = stopF - stop;
+    return lerp(colors[stop], colors[stop+1], k);
+}
 
-    return gradient;
+function series(n) {
+    var result = [];
+    for(var i=0; i<n; i++) {
+        result.push(i);
+    }
+    return result;
+}
+
+function colorGradient(colors, numSteps) {
+    return series(numSteps).map(function(i) {
+        return gradientInterpolate(colors, i/numSteps);
+    })
 }
 
 function colorGradientGamma(colors, numSteps) {
