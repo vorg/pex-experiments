@@ -24,7 +24,6 @@ Window.create({
         var res = this.getResources();
 
         this.gui = new GUI(ctx, this.getWidth(), this.getHeight());
-        this.gui.addLabel('Bla')
 
         this.camera  = new PerspCamera(45,this.getAspectRatio(),0.001,20.0);
         this.camera.lookAt([0, 1, 3], [0, 0, 0]);
@@ -45,14 +44,17 @@ Window.create({
         var cubeIndices = { data: cube.cells };
         this.cubeMesh = ctx.createMesh(cubeAttributes, cubeIndices, ctx.TRIANGLES);
 
-        var colors = ['#FF0000', '#00FF00', '#0000FF'].map(Color.fromHex);
-        var colors = ['#3031FF', '#AC38FE', '#F9252B', '#FEF63D'].map(Color.fromHex);
+        var colors1 = ['#FF0000', '#00FF00', '#0000FF'].map(Color.fromHex);
+        this.gui.addTexture2D('Gradient', ctx.createTexture2D(createGradient(colors1, 256, 64)));
+        this.gui.addTexture2D('Gradient correct gamma', ctx.createTexture2D(createGradient(colors1, 256, 64, true)));
 
-        var gradientTex = ctx.createTexture2D(createGradient(colors, 256, 64));
-        this.gui.addTexture2D('Gradient', gradientTex);
-        var gradientTexGamma = ctx.createTexture2D(createGradient(colors, 256, 64, true));
-        this.gui.addTexture2D('Gradient correct gamma', gradientTexGamma);
-        this.gui.addLabel('END');
+        var colors2 = ['#3031FF', '#AC38FE', '#F9252B', '#FEF63D'].map(Color.fromHex);
+        this.gui.addTexture2D('Gradient', ctx.createTexture2D(createGradient(colors2, 256, 64)));
+        this.gui.addTexture2D('Gradient correct gamma', ctx.createTexture2D(createGradient(colors2, 256, 64, true)));
+
+        var colors3 = ['#32BB67', '#FDD542', '#FE2F39'].map(Color.fromHex);
+        this.gui.addTexture2D('Gradient', ctx.createTexture2D(createGradient(colors3, 256, 64)));
+        this.gui.addTexture2D('Gradient correct gamma', ctx.createTexture2D(createGradient(colors3, 256, 64, true)));
     },
     draw: function() {
         var ctx = this.getContext();

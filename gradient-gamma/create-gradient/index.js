@@ -1,31 +1,9 @@
 var isBrowser = require('is-browser');
 var plask = isBrowser ? {} : require('plask');
 var Color = require('pex-color');
-var lerp = require('lerp-array');
+var ColorExt = require('../color-ext');
+var interpolateArrays = require('../interpolate-arrays');
 
-function toLinear(color) {
-    color = color.slice(0);
-    color[0] = Math.pow(color[0], 2.2);
-    color[1] = Math.pow(color[1], 2.2);
-    color[2] = Math.pow(color[2], 2.2);
-    return color;
-}
-
-function toGamma(color) {
-    color = color.slice(0);
-    color[0] = Math.pow(color[0], 1.0/2.2);
-    color[1] = Math.pow(color[1], 1.0/2.2);
-    color[2] = Math.pow(color[2], 1.0/2.2);
-    return color;
-}
-
-function gradientInterpolate(colors, t) {
-    var numStops = colors.length - 1;
-    var stopF = t * numStops;
-    var stop = Math.floor(stopF);
-    var k = stopF - stop;
-    return lerp(colors[stop], colors[stop+1], k);
-}
 
 function series(n) {
     var result = [];
@@ -37,14 +15,14 @@ function series(n) {
 
 function colorGradient(colors, numSteps) {
     return series(numSteps).map(function(i) {
-        return gradientInterpolate(colors, i/numSteps);
+        return interpolateArrays(colors, i/numSteps);
     })
 }
 
 function colorGradientGamma(colors, numSteps) {
-    colors = colors.map(toLinear);
+    colors = colors.map(ColorExt.toLinear);
     var gradient = colorGradient(colors, numSteps);
-    gradient = gradient.map(toGamma);
+    gradient = gradient.map(ColorExt.toGamma);
     return gradient;
 }
 
