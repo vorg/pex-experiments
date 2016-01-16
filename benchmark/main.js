@@ -41,6 +41,7 @@ Window.create({
         this.scenes.push(new Cubes(width, height, 2500));
         this.scenes.push(new Cubes(width, height, 5000));
         this.scenes.push(new Cubes(width, height, 10000));
+        this.scenes.push(new Cubes(width, height, 20000));
     },
     stopScene: function() {
         if (this.currentScene != -1) {
