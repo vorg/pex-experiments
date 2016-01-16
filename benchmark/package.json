@@ -17,7 +17,7 @@
     "pex-io": "^1.0.0-beta.1",
     "pex-math": "^1.0.0-beta.1",
     "pex-random": "^1.0.0-beta.1",
-    "pex-sys": "^1.0.0-beta.3",
+    "pex-sys": "^1.0.0-beta.4",
     "primitive-cube": "^1.0.2"
   },
   "scripts": {
