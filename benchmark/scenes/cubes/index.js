@@ -6,7 +6,9 @@ var rnd         = require('pex-random');
 var vert = glslify(__dirname + '/ShowNormals.vert');
 var frag = glslify(__dirname + '/ShowNormals.frag');
 
-function Cubes(width, height) {
+function Cubes(width, height, numCubes) {
+    this.name = 'Cubes ' + numCubes;
+    this.numCubes = numCubes;
     this.projectionMat = Mat4.perspective([], 60, width/height, 0.1, 100);
     this.viewMatrix = Mat4.lookAt([], [0,0,3], [0,0,0], [0,1,0]);
 }
@@ -24,8 +26,9 @@ Cubes.prototype.init = function(ctx) {
     this.cubeMesh = ctx.createMesh(cubeAttributes, cubeIndices, ctx.TRIANGLES);
 }
 
-Cubes.prototype.shutdown = function(ctx) {
-    //this.cubeMesh
+Cubes.prototype.dispose = function(ctx) {
+    //this.cubeMesh.dispose() //not implemented
+    this.showNormalsProgram.dispose();
 }
 
 Cubes.prototype.draw = function(ctx, elapsedSeconds) {
@@ -44,9 +47,7 @@ Cubes.prototype.draw = function(ctx, elapsedSeconds) {
 
     var scale = [1,1,1];
 
-    var numCubes = 5000;
-
-    for(var i=0; i<numCubes; i++) {
+    for(var i=0; i<this.numCubes; i++) {
         ctx.pushModelMatrix();
         var offset = rnd.vec3(3);
         offset[2] *= 0.1;
@@ -61,7 +62,7 @@ Cubes.prototype.draw = function(ctx, elapsedSeconds) {
 
     ctx.setViewMatrix(this.viewMatrix);
 
-    return numCubes;
+    return this.numCubes;
 }
 
 

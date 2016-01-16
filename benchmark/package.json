@@ -6,18 +6,19 @@
     "beefy": "^2.1.5",
     "browserify": "^12.0.1",
     "glslify-promise": "^1.0.1",
+    "glslify-sync": "./local_modules/glslify-sync",
     "is-browser": "^2.0.1",
     "pex-cam": "^1.0.0-beta.1",
     "pex-color": "^1.1.1",
     "pex-context": "^1.0.0-beta.1",
     "pex-draw": "^1.0.0-beta.1",
     "pex-geom": "^1.0.0-beta.1",
+    "pex-gui": "^1.0.0-beta.1",
     "pex-io": "^1.0.0-beta.1",
     "pex-math": "^1.0.0-beta.1",
     "pex-random": "^1.0.0-beta.1",
-    "pex-sys": "^1.0.0-beta.2",
-    "primitive-cube": "^1.0.2",
-    "glslify-sync": "./local_modules/glslify-sync"
+    "pex-sys": "^1.0.0-beta.3",
+    "primitive-cube": "^1.0.2"
   },
   "scripts": {
     "start": "beefy main.js:main.web.js --open -- -i plask -g glslify-sync/transform",
