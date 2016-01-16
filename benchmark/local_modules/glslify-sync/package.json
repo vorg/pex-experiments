@@ -1,0 +1,14 @@
+{
+  "name": "glslify-sync",
+  "version": "0.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Marcin Ignac <marcin.ignac@gmail.com> (http://marcinignac.com/)",
+  "license": "ISC",
+  "dependencies": {
+    "glslify": "^2.3.1"
+  }
+}
