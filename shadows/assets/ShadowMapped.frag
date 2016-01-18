@@ -1,3 +1,7 @@
+#ifdef GL_ES
+precision highp float;
+#endif
+
 uniform vec4 ambientColor;
 uniform vec4 diffuseColor;
 uniform vec3 lightPos;
