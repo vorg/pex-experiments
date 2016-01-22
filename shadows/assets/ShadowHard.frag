@@ -8,12 +8,14 @@ uniform vec3 lightPos;
 uniform float wrap;
 uniform float lightNear;
 uniform float lightFar;
+uniform float bias;
 uniform sampler2D depthMap;
 
 varying vec3 vNormal;
 varying vec3 vWorldPosition;
 uniform mat4 lightProjectionMatrix;
 uniform mat4 lightViewMatrix;
+
 
 #pragma glslify: toLinear=require(glsl-gamma/in)
 #pragma glslify: toGamma=require(glsl-gamma/out)
@@ -47,7 +49,6 @@ void main() {
   vec2 lightDeviceCoordsPositionNormalized = lightDeviceCoordsPosition.xy / lightDeviceCoordsPosition.w;
   vec2 lightUV = lightDeviceCoordsPositionNormalized.xy * 0.5 + 0.5;
 
-  float bias = 0.01;
   float lightDistDepth = readDepth(depthMap, lightUV);
 
   //step(edge, x) -> 0 if x < edge, 1 if x > edge

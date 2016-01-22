@@ -20,8 +20,8 @@ Window.create({
     resources: {
         showNormalsVert: { glsl: glslify(__dirname + '/assets/ShowNormals.vert') },
         showNormalsFrag: { glsl: glslify(__dirname + '/assets/ShowNormals.frag') },
-        shadowMappedVert: { glsl: glslify(__dirname + '/assets/ShadowMapped.vert') },
-        shadowMappedFrag: { glsl: glslify(__dirname + '/assets/ShadowMapped.frag') }
+        shadowHardVert: { glsl: glslify(__dirname + '/assets/ShadowHard.vert') },
+        shadowHardFrag: { glsl: glslify(__dirname + '/assets/ShadowHard.frag') }
     },
     init: function() {
         var ctx = this.getContext();
@@ -116,19 +116,22 @@ Window.create({
         ctx.bindProgram(this.showNormalsProgram);
 
         this.drawDepthProgram = ctx.createProgram(res.showNormalsVert, res.showNormalsFrag);
-        this.drawShadowMappedProgram = ctx.createProgram(res.shadowMappedVert, res.shadowMappedFrag);
 
-        ctx.bindProgram(this.drawShadowMappedProgram);
+        this.shadowPrograms = [];
+        this.shadowPrograms.push({
+            name: 'Hard',
+            program: ctx.createProgram(res.shadowHardVert, res.shadowHardFrag)
+        });
+        this.activeShadowProgramIndex = 0;
 
-        this.drawShadowMappedProgram.setUniform('depthMap', this.depthMap)
-        this.drawShadowMappedProgram.setUniform('ambientColor', [0.0, 0.0, 0.0, 0.0])
-        this.drawShadowMappedProgram.setUniform('diffuseColor', [1.0, 1.0, 1.0, 1.0])
-        this.drawShadowMappedProgram.setUniform('lightPos', this.lightPos)
-        this.drawShadowMappedProgram.setUniform('wrap', 0)
-        this.drawShadowMappedProgram.setUniform('lightNear', this.lightNear)
-        this.drawShadowMappedProgram.setUniform('lightFar', this.lightFar)
-        this.drawShadowMappedProgram.setUniform('lightViewMatrix', this.lightViewMatrix)
-        this.drawShadowMappedProgram.setUniform('lightProjectionMatrix', this.lightProjectionMatrix)
+        this.bias = 0.1;
+
+        this.gui.addHeader('Program').setPosition(180, 10);
+        this.gui.addParam('Bias', this, 'bias', { min: 0, max: 1 });
+
+        this.gui.addRadioList('Shadow program', this, 'activeShadowProgramIndex', this.shadowPrograms.map(function(programInfo, index) {
+            return { name: programInfo.name, value: index}
+        }));
     },
     drawScene: function() {
         var ctx = this.getContext();
@@ -172,11 +175,23 @@ Window.create({
         ctx.setViewport(0, 0, this.getWidth(), this.getHeight());
         ctx.setProjectionMatrix(this.camera.getProjectionMatrix());
         ctx.setViewMatrix(this.camera.getViewMatrix());
-        ctx.bindProgram(this.drawShadowMappedProgram);
         ctx.setClearColor(0.2, 0.2, 0.2, 1);
         ctx.clear(ctx.COLOR_BIT | ctx.DEPTH_BIT);
         ctx.setDepthTest(true);
 
+        var activeShadowProgram = this.shadowPrograms[this.activeShadowProgramIndex].program;
+        ctx.bindProgram(activeShadowProgram);
+
+        activeShadowProgram.setUniform('depthMap', this.depthMap)
+        activeShadowProgram.setUniform('ambientColor', [0.0, 0.0, 0.0, 0.0])
+        activeShadowProgram.setUniform('diffuseColor', [1.0, 1.0, 1.0, 1.0])
+        activeShadowProgram.setUniform('lightPos', this.lightPos)
+        activeShadowProgram.setUniform('bias', this.bias)
+        activeShadowProgram.setUniform('wrap', 0)
+        activeShadowProgram.setUniform('lightNear', this.lightNear)
+        activeShadowProgram.setUniform('lightFar', this.lightFar)
+        activeShadowProgram.setUniform('lightViewMatrix', this.lightViewMatrix)
+        activeShadowProgram.setUniform('lightProjectionMatrix', this.lightProjectionMatrix)
 
         this.drawScene();
 
