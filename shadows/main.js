@@ -20,6 +20,8 @@ Window.create({
     resources: {
         showNormalsVert: { glsl: glslify(__dirname + '/assets/ShowNormals.vert') },
         showNormalsFrag: { glsl: glslify(__dirname + '/assets/ShowNormals.frag') },
+        showDepthVert: { glsl: glslify(__dirname + '/assets/ShowDepth.vert') },
+        showDepthFrag: { glsl: glslify(__dirname + '/assets/ShowDepth.frag') },
         shadowHardVert: { glsl: glslify(__dirname + '/assets/ShadowHard.vert') },
         shadowHardFrag: { glsl: glslify(__dirname + '/assets/ShadowHard.frag') },
         shadowInterpolatedFrag: { glsl: glslify(__dirname + '/assets/ShadowInterpolated.frag') }
@@ -102,7 +104,7 @@ Window.create({
         this.lightViewMatrix       = Mat4.lookAt([], this.lightPos, this.target, this.up);
 
 
-        this.colorMap = ctx.createTexture2D(null, this.shadowMapSize, this.shadowMapSize);
+        this.colorMap = ctx.createTexture2D(null, this.shadowMapSize, this.shadowMapSize, { magFilter: ctx.LINEAR, minFilter: ctx.LINEAR });
         this.depthMap = ctx.createTexture2D(null, this.shadowMapSize, this.shadowMapSize, { format: ctx.DEPTH_COMPONENT, type: ctx.UNSIGNED_SHORT });
         this.shadowFBO = ctx.createFramebuffer([ { texture: this.colorMap }], { texture: this.depthMap });
 
@@ -115,6 +117,9 @@ Window.create({
 
         this.showNormalsProgram = ctx.createProgram(res.showNormalsVert, res.showNormalsFrag);
         ctx.bindProgram(this.showNormalsProgram);
+
+        this.showDepthProgram = ctx.createProgram(res.showDepthVert, res.showDepthFrag);
+        ctx.bindProgram(this.showDepthProgram);
 
         this.drawDepthProgram = ctx.createProgram(res.showNormalsVert, res.showNormalsFrag);
 
@@ -161,7 +166,9 @@ Window.create({
 
         ctx.pushState(ctx.FRAMEBUFFER_BIT);
         ctx.bindFramebuffer(this.shadowFBO);
-        ctx.bindProgram(this.showNormalsProgram);
+        ctx.bindProgram(this.showDepthProgram);
+        this.showDepthProgram.setUniform('uNear', this.lightNear)
+        this.showDepthProgram.setUniform('uFar', this.lightFar)
         ctx.setViewport(0, 0, this.shadowMapSize, this.shadowMapSize);
         ctx.setProjectionMatrix(this.lightProjectionMatrix);
         ctx.setViewMatrix(this.lightViewMatrix);
@@ -181,7 +188,8 @@ Window.create({
         var activeShadowProgram = this.shadowPrograms[this.activeShadowProgramIndex].program;
         ctx.bindProgram(activeShadowProgram);
 
-        activeShadowProgram.setUniform('depthMap', this.depthMap)
+        ctx.bindTexture(this.colorMap, 0);
+        activeShadowProgram.setUniform('depthMap', 0)
         activeShadowProgram.setUniform('ambientColor', [0.0, 0.0, 0.0, 0.0])
         activeShadowProgram.setUniform('diffuseColor', [1.0, 1.0, 1.0, 1.0])
         activeShadowProgram.setUniform('lightPos', this.lightPos)
