@@ -20,8 +20,6 @@ Window.create({
     resources: {
         showNormalsVert: { glsl: glslify(__dirname + '/assets/ShowNormals.vert') },
         showNormalsFrag: { glsl: glslify(__dirname + '/assets/ShowNormals.frag') },
-        showDepthVert: { glsl: glslify(__dirname + '/assets/ShowDepth.vert') },
-        showDepthFrag: { glsl: glslify(__dirname + '/assets/ShowDepth.frag') },
         shadowHardVert: { glsl: glslify(__dirname + '/assets/ShadowHard.vert') },
         shadowHardFrag: { glsl: glslify(__dirname + '/assets/ShadowHard.frag') },
         shadowInterpolatedFrag: { glsl: glslify(__dirname + '/assets/ShadowInterpolated.frag') }
@@ -103,7 +101,7 @@ Window.create({
         this.lightProjectionMatrix = Mat4.perspective([], 60, 1, this.lightNear, this.lightFar);
         this.lightViewMatrix       = Mat4.lookAt([], this.lightPos, this.target, this.up);
 
-        this.colorMap = ctx.createTexture2D(null, this.shadowMapSize, this.shadowMapSize, { magFilter: ctx.NEAREST, minFilter: ctx.NEAREST, type: ctx.FLOAT });
+        this.colorMap = ctx.createTexture2D(null, this.shadowMapSize, this.shadowMapSize, { magFilter: ctx.NEAREST, minFilter: ctx.NEAREST, type: ctx.UNSIGNED_BYTE });
         this.depthMap = ctx.createTexture2D(null, this.shadowMapSize, this.shadowMapSize, { magFilter: ctx.NEAREST, minFilter: ctx.NEAREST, format: ctx.DEPTH_COMPONENT, type: ctx.UNSIGNED_SHORT });
         this.shadowFBO = ctx.createFramebuffer([ { texture: this.colorMap }], { texture: this.depthMap });
 
@@ -165,9 +163,7 @@ Window.create({
 
         ctx.pushState(ctx.FRAMEBUFFER_BIT);
         ctx.bindFramebuffer(this.shadowFBO);
-        ctx.bindProgram(this.showDepthProgram);
-        this.showDepthProgram.setUniform('uNear', this.lightNear)
-        this.showDepthProgram.setUniform('uFar', this.lightFar)
+        ctx.bindProgram(this.showNormalsProgram);
         ctx.setViewport(0, 0, this.shadowMapSize, this.shadowMapSize);
         ctx.setProjectionMatrix(this.lightProjectionMatrix);
         ctx.setViewMatrix(this.lightViewMatrix);
