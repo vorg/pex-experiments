@@ -22,7 +22,8 @@ Window.create({
         showNormalsFrag: { glsl: glslify(__dirname + '/assets/ShowNormals.frag') },
         shadowHardVert: { glsl: glslify(__dirname + '/assets/ShadowHard.vert') },
         shadowHardFrag: { glsl: glslify(__dirname + '/assets/ShadowHard.frag') },
-        shadowInterpolatedFrag: { glsl: glslify(__dirname + '/assets/ShadowInterpolated.frag') }
+        shadowInterpolatedFrag: { glsl: glslify(__dirname + '/assets/ShadowInterpolated.frag') },
+        shadowPCFFrag: { glsl: glslify(__dirname + '/assets/ShadowPCF.frag') }
     },
     init: function() {
         var ctx = this.getContext();
@@ -123,7 +124,8 @@ Window.create({
         this.shadowPrograms = [];
         this.shadowPrograms.push({ name: 'Hard', program: ctx.createProgram(res.shadowHardVert, res.shadowHardFrag) });
         this.shadowPrograms.push({ name: 'Interpolated', program: ctx.createProgram(res.shadowHardVert, res.shadowInterpolatedFrag) });
-        this.activeShadowProgramIndex = 1;
+        this.shadowPrograms.push({ name: 'PCF', program: ctx.createProgram(res.shadowHardVert, res.shadowPCFFrag) });
+        this.activeShadowProgramIndex = 2;
 
         this.bias = 0.1;
 
