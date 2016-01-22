@@ -24,7 +24,8 @@ Window.create({
         shadowHardFrag: { glsl: glslify(__dirname + '/assets/ShadowHard.frag') },
         shadowInterpolatedFrag: { glsl: glslify(__dirname + '/assets/ShadowInterpolated.frag') },
         shadowPCFFrag: { glsl: glslify(__dirname + '/assets/ShadowPCF.frag') },
-        shadowPCFInterpolatedFrag: { glsl: glslify(__dirname + '/assets/ShadowPCFInterpolated.frag') }
+        shadowPCFInterpolatedFrag: { glsl: glslify(__dirname + '/assets/ShadowPCFInterpolated.frag') },
+        shadowShadedFrag: { glsl: glslify(__dirname + '/assets/ShadowShaded.frag') }
     },
     init: function() {
         var ctx = this.getContext();
@@ -127,7 +128,8 @@ Window.create({
         this.shadowPrograms.push({ name: 'Interpolated', program: ctx.createProgram(res.shadowHardVert, res.shadowInterpolatedFrag) });
         this.shadowPrograms.push({ name: 'PCF', program: ctx.createProgram(res.shadowHardVert, res.shadowPCFFrag) });
         this.shadowPrograms.push({ name: 'PCFInterpolated', program: ctx.createProgram(res.shadowHardVert, res.shadowPCFInterpolatedFrag) });
-        this.activeShadowProgramIndex = 2;
+        this.shadowPrograms.push({ name: 'Shaded', program: ctx.createProgram(res.shadowHardVert, res.shadowShadedFrag) });
+        this.activeShadowProgramIndex = 4;
 
         this.bias = 0.1;
 
