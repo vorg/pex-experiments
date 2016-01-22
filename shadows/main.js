@@ -103,9 +103,8 @@ Window.create({
         this.lightProjectionMatrix = Mat4.perspective([], 60, 1, this.lightNear, this.lightFar);
         this.lightViewMatrix       = Mat4.lookAt([], this.lightPos, this.target, this.up);
 
-
-        this.colorMap = ctx.createTexture2D(null, this.shadowMapSize, this.shadowMapSize, { magFilter: ctx.LINEAR, minFilter: ctx.LINEAR });
-        this.depthMap = ctx.createTexture2D(null, this.shadowMapSize, this.shadowMapSize, { format: ctx.DEPTH_COMPONENT, type: ctx.UNSIGNED_SHORT });
+        this.colorMap = ctx.createTexture2D(null, this.shadowMapSize, this.shadowMapSize, { magFilter: ctx.NEAREST, minFilter: ctx.NEAREST, type: ctx.FLOAT });
+        this.depthMap = ctx.createTexture2D(null, this.shadowMapSize, this.shadowMapSize, { magFilter: ctx.NEAREST, minFilter: ctx.NEAREST, format: ctx.DEPTH_COMPONENT, type: ctx.UNSIGNED_SHORT });
         this.shadowFBO = ctx.createFramebuffer([ { texture: this.colorMap }], { texture: this.depthMap });
 
         this.gui.addTexture2D('Color', this.colorMap);
@@ -188,8 +187,8 @@ Window.create({
         var activeShadowProgram = this.shadowPrograms[this.activeShadowProgramIndex].program;
         ctx.bindProgram(activeShadowProgram);
 
-        ctx.bindTexture(this.colorMap, 0);
-        activeShadowProgram.setUniform('depthMap', 0)
+        ctx.bindTexture(this.depthMap, 0);
+        activeShadowProgram.setUniform('depthMap', 0);
         activeShadowProgram.setUniform('ambientColor', [0.0, 0.0, 0.0, 0.0])
         activeShadowProgram.setUniform('diffuseColor', [1.0, 1.0, 1.0, 1.0])
         activeShadowProgram.setUniform('lightPos', this.lightPos)
