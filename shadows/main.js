@@ -21,7 +21,8 @@ Window.create({
         showNormalsVert: { glsl: glslify(__dirname + '/assets/ShowNormals.vert') },
         showNormalsFrag: { glsl: glslify(__dirname + '/assets/ShowNormals.frag') },
         shadowHardVert: { glsl: glslify(__dirname + '/assets/ShadowHard.vert') },
-        shadowHardFrag: { glsl: glslify(__dirname + '/assets/ShadowHard.frag') }
+        shadowHardFrag: { glsl: glslify(__dirname + '/assets/ShadowHard.frag') },
+        shadowInterpolatedFrag: { glsl: glslify(__dirname + '/assets/ShadowInterpolated.frag') }
     },
     init: function() {
         var ctx = this.getContext();
@@ -95,7 +96,7 @@ Window.create({
         this.lightNear  = 1;
         this.lightFar   = 20;
 
-        this.shadowMapSize = 1024;
+        this.shadowMapSize = 512;
 
         this.lightProjectionMatrix = Mat4.perspective([], 60, 1, this.lightNear, this.lightFar);
         this.lightViewMatrix       = Mat4.lookAt([], this.lightPos, this.target, this.up);
@@ -118,11 +119,9 @@ Window.create({
         this.drawDepthProgram = ctx.createProgram(res.showNormalsVert, res.showNormalsFrag);
 
         this.shadowPrograms = [];
-        this.shadowPrograms.push({
-            name: 'Hard',
-            program: ctx.createProgram(res.shadowHardVert, res.shadowHardFrag)
-        });
-        this.activeShadowProgramIndex = 0;
+        this.shadowPrograms.push({ name: 'Hard', program: ctx.createProgram(res.shadowHardVert, res.shadowHardFrag) });
+        this.shadowPrograms.push({ name: 'Interpolated', program: ctx.createProgram(res.shadowHardVert, res.shadowInterpolatedFrag) });
+        this.activeShadowProgramIndex = 1;
 
         this.bias = 0.1;
 
@@ -192,6 +191,9 @@ Window.create({
         activeShadowProgram.setUniform('lightFar', this.lightFar)
         activeShadowProgram.setUniform('lightViewMatrix', this.lightViewMatrix)
         activeShadowProgram.setUniform('lightProjectionMatrix', this.lightProjectionMatrix)
+        if (activeShadowProgram.hasUniform('depthMapSize')) {
+            activeShadowProgram.setUniform('depthMapSize', [this.shadowMapSize, this.shadowMapSize]);
+        }
 
         this.drawScene();
 
