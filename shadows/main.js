@@ -31,7 +31,7 @@ Window.create({
         this.addEventListener(this.gui);
 
         this.camera  = new PerspCamera(45,this.getAspectRatio(),0.001,20.0);
-        this.camera.lookAt([0, 2, 5], [0, 0, 0]);
+        this.camera.lookAt([-2, 2, 5], [0, 0, 0]);
         ctx.setProjectionMatrix(this.camera.getProjectionMatrix());
 
         this.arcball = new Arcball(this.camera, this.getWidth(), this.getHeight());
@@ -89,9 +89,9 @@ Window.create({
         var res = this.getResources();
         var ctx = this.getContext();
 
-        this.target     = [0, 0, 0];
+        this.target     = [2, 0, 0];
         this.up         = [0, 1, 0];
-        this.lightPos   = [4, 7, 5];
+        this.lightPos   = [5, 7, 6];
         this.lightNear  = 1;
         this.lightFar   = 20;
 

@@ -42,24 +42,24 @@ void main() {
   gl_FragColor.rgb = ambient + NdotL * diffuse;
 
   vec4 lightViewPosition = lightViewMatrix * vec4(vWorldPosition, 1.0);
-  float lightDist1 = -lightViewPosition.z;
+  float lightDistView = -lightViewPosition.z;
   vec4 lightDeviceCoordsPosition = lightProjectionMatrix * lightViewPosition;
   vec2 lightDeviceCoordsPositionNormalized = lightDeviceCoordsPosition.xy / lightDeviceCoordsPosition.w;
   vec2 lightUV = lightDeviceCoordsPositionNormalized.xy * 0.5 + 0.5;
-  float bias = 0.01;
-  float lightDist2 = readDepth(depthMap, lightUV);
 
-  if (lightDist1 < lightDist2 + bias)
-    gl_FragColor = min(gl_FragColor,  vec4(1.0, 1.0, 1.0, 1.0));
-  else
-    gl_FragColor = min(gl_FragColor, vec4(0.05, 0.05, 0.05, 1.0));
+  float bias = 0.01;
+  float lightDistDepth = readDepth(depthMap, lightUV);
+
+  //step(edge, x) -> 0 if x < edge, 1 if x > edge
+  //pixel is in the shadow if
+  //
+  //  Eye  distView [|||||||] distDepth <-------- Ligh
+  //
+  //  "if distDepth is closer that distView then shadow"
+  //  "max thickness of the opaque object allowed is 'bias'"
+  float illuminated = step(lightDistView, lightDistDepth + bias);
+
+  gl_FragColor = mix(vec4(0.05, 0.05, 0.05, 1.0), vec4(1.0, 1.0, 1.0, 1.0), illuminated);
 
   gl_FragColor.rgb = toGamma(gl_FragColor.rgb);
-
-  //gl_FragColor = vec4(lightDist1/5.0);
-  //gl_FragColor = vec4(lightUV, 0.0, 1.0);
-  //gl_FragColor = vec4(abs(lightDist1 - lightDist2));
-  //gl_FragColor = vec4(abs(lightDist1 - lightDist2));
-  //gl_FragColor = vec4((lightDist1 - lightNear)/(lightFar - lightNear));
-  //gl_FragColor = vec4((lightDist2 - lightNear)/(lightFar - lightNear));
 }
