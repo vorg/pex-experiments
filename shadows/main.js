@@ -23,7 +23,8 @@ Window.create({
         shadowHardVert: { glsl: glslify(__dirname + '/assets/ShadowHard.vert') },
         shadowHardFrag: { glsl: glslify(__dirname + '/assets/ShadowHard.frag') },
         shadowInterpolatedFrag: { glsl: glslify(__dirname + '/assets/ShadowInterpolated.frag') },
-        shadowPCFFrag: { glsl: glslify(__dirname + '/assets/ShadowPCF.frag') }
+        shadowPCFFrag: { glsl: glslify(__dirname + '/assets/ShadowPCF.frag') },
+        shadowPCFInterpolatedFrag: { glsl: glslify(__dirname + '/assets/ShadowPCFInterpolated.frag') }
     },
     init: function() {
         var ctx = this.getContext();
@@ -61,7 +62,7 @@ Window.create({
         var bunnyIndices = { data: bunny.cells };
         this.bunnyMesh = ctx.createMesh(bunnyAttributes, bunnyIndices, ctx.TRIANGLES);
 
-        var cube = createCube(15, 0.1, 15);
+        var cube = createCube(25, 0.1, 25);
         var cubeAttributes = [
             { data: cube.positions, location: ctx.ATTRIB_POSITION },
             { data: cube.normals, location: ctx.ATTRIB_NORMAL }
@@ -125,11 +126,15 @@ Window.create({
         this.shadowPrograms.push({ name: 'Hard', program: ctx.createProgram(res.shadowHardVert, res.shadowHardFrag) });
         this.shadowPrograms.push({ name: 'Interpolated', program: ctx.createProgram(res.shadowHardVert, res.shadowInterpolatedFrag) });
         this.shadowPrograms.push({ name: 'PCF', program: ctx.createProgram(res.shadowHardVert, res.shadowPCFFrag) });
+        this.shadowPrograms.push({ name: 'PCFInterpolated', program: ctx.createProgram(res.shadowHardVert, res.shadowPCFInterpolatedFrag) });
         this.activeShadowProgramIndex = 2;
 
         this.bias = 0.1;
 
         this.gui.addHeader('Program').setPosition(180, 10);
+        this.gui.addParam('Light Y', this.lightPos, '1', { min: 3, max: 10 }, function() {
+            this.lightViewMatrix       = Mat4.lookAt([], this.lightPos, this.target, this.up);
+        }.bind(this));
         this.gui.addParam('Bias', this, 'bias', { min: 0, max: 1 });
 
         this.gui.addRadioList('Shadow program', this, 'activeShadowProgramIndex', this.shadowPrograms.map(function(programInfo, index) {
