@@ -53,6 +53,7 @@ Window.create({
         this.speeds = [];
         this.offsets = [];
         this.scales = [];
+        this.colors = [];
 
         for(var i=0; i<10; i++) {
             for(var j=0; j<1000; j++) {
@@ -66,6 +67,11 @@ Window.create({
                 this.scales.push(0.1)
                 this.times.push(t);
                 this.speeds.push(0.1);
+                var color = [1,1,1,1];
+                if (random.chance(0.2)) {
+                    color = [1,Math.random(),0,1];
+                }
+                this.colors.push(color)
             }
         }
 
@@ -74,7 +80,8 @@ Window.create({
             { data: box.positions, location: ctx.ATTRIB_POSITION },
             { data: box.normals, location: ctx.ATTRIB_NORMAL },
             { data: this.offsets, location: ctx.ATTRIB_CUSTOM_0, divisor: 1 },
-            { data: this.scales, location: ctx.ATTRIB_CUSTOM_1, divisor: 1}
+            { data: this.scales, location: ctx.ATTRIB_CUSTOM_1, divisor: 1},
+            { data: this.colors, location: ctx.ATTRIB_CUSTOM_2, divisor: 1}
         ];
         var boxIndices = { data: box.cells };
         this.boxMesh = ctx.createMesh(boxAttributes, boxIndices);
@@ -84,7 +91,8 @@ Window.create({
             { data: floor.positions, location: ctx.ATTRIB_POSITION },
             { data: floor.normals, location: ctx.ATTRIB_NORMAL },
             { data: [[0,-1,0]], location: ctx.ATTRIB_CUSTOM_0, divisor: 1 },
-            { data: [2], location: ctx.ATTRIB_CUSTOM_1, divisor: 1}
+            { data: [2], location: ctx.ATTRIB_CUSTOM_1, divisor: 1},
+            { data: [[1,1,1,1]], location: ctx.ATTRIB_CUSTOM_2, divisor: 1}
         ];
         var floorIndices = { data: floor.cells };
         this.floorMesh = ctx.createMesh(floorAttributes, floorIndices);
@@ -94,7 +102,8 @@ Window.create({
             { data: wall.positions, location: ctx.ATTRIB_POSITION },
             { data: wall.normals, location: ctx.ATTRIB_NORMAL },
             { data: [[0,0,-0.5]], location: ctx.ATTRIB_CUSTOM_0, divisor: 1 },
-            { data: [2], location: ctx.ATTRIB_CUSTOM_1, divisor: 1}
+            { data: [2], location: ctx.ATTRIB_CUSTOM_1, divisor: 1},
+            { data: [[1,1,1,1]], location: ctx.ATTRIB_CUSTOM_2, divisor: 1}
         ];
         var wallIndices = { data: wall.cells };
         this.wallMesh = ctx.createMesh(wallAttributes, wallIndices);
@@ -111,7 +120,7 @@ Window.create({
         this.lightNear  = 3;
         this.lightFar   = 11;
 
-        this.shadowMapSize = 512;
+        this.shadowMapSize = 1024;
 
         this.lightProjectionMatrix = Mat4.perspective([], 60, 1, this.lightNear, this.lightFar);
         this.lightViewMatrix       = Mat4.lookAt([], this.lightPos, this.target, this.up);

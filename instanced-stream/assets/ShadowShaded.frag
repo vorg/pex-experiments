@@ -16,7 +16,7 @@ varying vec3 vNormal;
 varying vec3 vWorldPosition;
 uniform mat4 lightProjectionMatrix;
 uniform mat4 lightViewMatrix;
-
+varying vec4 vColor;
 
 #pragma glslify: toLinear=require(glsl-gamma/in)
 #pragma glslify: toGamma=require(glsl-gamma/out)
@@ -71,7 +71,7 @@ void main() {
   vec3 N = normalize(vNormal);
   float NdotL = max(0.0, (dot(N, L) + wrap) / (1.0 + wrap));
   vec3 ambient = toLinear(ambientColor.rgb);
-  vec3 diffuse = toLinear(diffuseColor.rgb);
+  vec3 diffuse = toLinear(diffuseColor.rgb) * toLinear(vColor.rgb);
   gl_FragColor.rgb = ambient + NdotL * diffuse;
 
   vec4 lightViewPosition = lightViewMatrix * vec4(vWorldPosition, 1.0);
@@ -83,6 +83,9 @@ void main() {
   float illuminated = PCF(depthMap, depthMapSize, lightUV, lightDistView - bias);
 
   gl_FragColor *= gl_FragColor * mix(vec4(0.05, 0.05, 0.05, 1.0), vec4(1.0, 1.0, 1.0, 1.0), illuminated);
+
+  float exposure = 1.0;
+  gl_FragColor.rgb = gl_FragColor.rgb * (1.0 + exposure);
 
   gl_FragColor.rgb = toGamma(gl_FragColor.rgb);
 }
