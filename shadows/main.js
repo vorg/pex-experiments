@@ -118,8 +118,6 @@ Window.create({
         this.showNormalsProgram = ctx.createProgram(res.showNormalsVert, res.showNormalsFrag);
         ctx.bindProgram(this.showNormalsProgram);
 
-        this.showDepthProgram = ctx.createProgram(res.showDepthVert, res.showDepthFrag);
-        ctx.bindProgram(this.showDepthProgram);
 
         this.drawDepthProgram = ctx.createProgram(res.showNormalsVert, res.showNormalsFrag);
 
