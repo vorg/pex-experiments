@@ -2,4 +2,7 @@
 
 ![](screenshot.jpg)
 
-Soft Shadows + Instancing + SSAO
+Soft Shadows + Instancing
+
+### TODO:
+- [ ] SSAO via pex-fx
