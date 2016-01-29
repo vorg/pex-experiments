@@ -3,6 +3,7 @@
 var Window      = require('pex-sys/Window');
 var Mat4        = require('pex-math/Mat4');
 var Vec3        = require('pex-math/Vec3');
+var Quat        = require('pex-math/Quat');
 var createCube  = require('primitive-cube');
 var glslify     = require('glslify-promise');
 var PerspCamera = require('pex-cam/PerspCamera');
@@ -11,6 +12,7 @@ var random      = require('pex-random');
 var MathUtils   = require('pex-math/Utils');
 var GUI         = require('pex-gui');
 var isBrowser   = require('is-browser');
+var Color       = require('pex-color');
 
 var remap       = MathUtils.map;
 var fract       = function(f) { return f - Math.floor(f); }
@@ -40,7 +42,7 @@ Window.create({
         ctx.setProjectionMatrix(this.camera.getProjectionMatrix());
 
         this.arcball = new Arcball(this.camera, this.getWidth(), this.getHeight());
-        this.arcball.setDistance(3.0);
+        this.arcball.setDistance(5.0);
         this.addEventListener(this.arcball);
 
         var res = this.getResources();
@@ -51,6 +53,7 @@ Window.create({
         this.randomPositions = [];
         this.times = [];
         this.speeds = [];
+        this.prevOffsets = [];
         this.offsets = [];
         this.scales = [];
         this.colors = [];
@@ -64,24 +67,26 @@ Window.create({
                 pos[0] += 0.1 * Math.sin(t * (1.0 + fract(1.1771 * i)) * Math.PI * 2 + i * 17.42)
                 pos[1] += remap(t, 0, 1, -1, 1)
                 this.offsets.push(pos)
+                this.prevOffsets.push(Vec3.copy(pos));
                 this.scales.push(0.1)
                 this.times.push(t);
                 this.speeds.push(0.1);
                 var color = [1,1,1,1];
                 if (random.chance(0.2)) {
-                    color = [1,Math.random(),0,1];
+                    color = Color.fromHSV(i/10,1,1);
                 }
                 this.colors.push(color)
             }
         }
 
-        var box = createCube(0.25, 0.5, 0.25);
+        var box = createCube(0.25, 0.25, 0.5);
         var boxAttributes = [
             { data: box.positions, location: ctx.ATTRIB_POSITION },
             { data: box.normals, location: ctx.ATTRIB_NORMAL },
             { data: this.offsets, location: ctx.ATTRIB_CUSTOM_0, divisor: 1 },
-            { data: this.scales, location: ctx.ATTRIB_CUSTOM_1, divisor: 1},
-            { data: this.colors, location: ctx.ATTRIB_CUSTOM_2, divisor: 1}
+            { data: this.prevOffsets, location: ctx.ATTRIB_CUSTOM_1, divisor: 1 },
+            { data: this.scales, location: ctx.ATTRIB_CUSTOM_2, divisor: 1},
+            { data: this.colors, location: ctx.ATTRIB_CUSTOM_3, divisor: 1}
         ];
         var boxIndices = { data: box.cells };
         this.boxMesh = ctx.createMesh(boxAttributes, boxIndices);
@@ -91,8 +96,9 @@ Window.create({
             { data: floor.positions, location: ctx.ATTRIB_POSITION },
             { data: floor.normals, location: ctx.ATTRIB_NORMAL },
             { data: [[0,-1,0]], location: ctx.ATTRIB_CUSTOM_0, divisor: 1 },
-            { data: [2], location: ctx.ATTRIB_CUSTOM_1, divisor: 1},
-            { data: [[1,1,1,1]], location: ctx.ATTRIB_CUSTOM_2, divisor: 1}
+            { data: [[0,-1,0]], location: ctx.ATTRIB_CUSTOM_1, divisor: 1 },
+            { data: [2], location: ctx.ATTRIB_CUSTOM_2, divisor: 1},
+            { data: [[1,1,1,1]], location: ctx.ATTRIB_CUSTOM_3, divisor: 1}
         ];
         var floorIndices = { data: floor.cells };
         this.floorMesh = ctx.createMesh(floorAttributes, floorIndices);
@@ -102,8 +108,9 @@ Window.create({
             { data: wall.positions, location: ctx.ATTRIB_POSITION },
             { data: wall.normals, location: ctx.ATTRIB_NORMAL },
             { data: [[0,0,-0.5]], location: ctx.ATTRIB_CUSTOM_0, divisor: 1 },
-            { data: [2], location: ctx.ATTRIB_CUSTOM_1, divisor: 1},
-            { data: [[1,1,1,1]], location: ctx.ATTRIB_CUSTOM_2, divisor: 1}
+            { data: [[0,0,-0.5]], location: ctx.ATTRIB_CUSTOM_1, divisor: 1 },
+            { data: [2], location: ctx.ATTRIB_CUSTOM_2, divisor: 1},
+            { data: [[1,1,1,1]], location: ctx.ATTRIB_CUSTOM_3, divisor: 1}
         ];
         var wallIndices = { data: wall.cells };
         this.wallMesh = ctx.createMesh(wallAttributes, wallIndices);
@@ -178,10 +185,13 @@ Window.create({
             for(var j=0; j<1000; j++) {
                 this.times[idx] += this.speeds[idx] * delta;
                 var t = this.times[idx];
+                Vec3.set(this.prevOffsets[idx], this.offsets[idx]);
                 var pos = this.offsets[idx];
                 Vec3.set(pos, this.randomPositions[idx]);
                 pos[0] += remap(i, 0, 9, -2, 2);
-                pos[0] += 0.1 * Math.sin(t * (1.0 + fract(1.1771 * i)) * Math.PI * 2 + i * 17.42)
+                pos[0] += 0.2 * Math.sin(t * (1.0 + fract(1.1771 * i)) * Math.PI * 2 + i * 17.42)
+                pos[2] += 0.2 * Math.cos(t * (1.0 + fract(1.1771 * i)) * Math.PI * 2 + i * 17.42)
+                pos[2] += Math.cos(i);
                 pos[1] += remap(t % 1, 0, 1, -1, 1)
                 idx++;
             }
@@ -189,6 +199,7 @@ Window.create({
 
         var ctx = this.getContext();
         this.boxMesh.updateAttribute(ctx.ATTRIB_CUSTOM_0, this.offsets);
+        this.boxMesh.updateAttribute(ctx.ATTRIB_CUSTOM_1, this.prevOffsets);
     },
     draw: function() {
         var ctx = this.getContext();
@@ -225,7 +236,7 @@ Window.create({
         activeShadowProgram.setUniform('diffuseColor', [1.0, 1.0, 1.0, 1.0])
         activeShadowProgram.setUniform('lightPos', this.lightPos)
         activeShadowProgram.setUniform('bias', this.bias)
-        activeShadowProgram.setUniform('wrap', 0)
+        activeShadowProgram.setUniform('wrap', 1)
         activeShadowProgram.setUniform('lightNear', this.lightNear)
         activeShadowProgram.setUniform('lightFar', this.lightFar)
         activeShadowProgram.setUniform('lightViewMatrix', this.lightViewMatrix)
