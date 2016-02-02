@@ -9,6 +9,7 @@ MIT, see [LICENSE.md](http://github.com/vorg/pex-experiments/blob/master/LICENSE
 
 | Screenshot  | Name |
 | ------------- | ------------- |
+| ![](blocks/screenshot.jpg)| [blocks](/blocks) |
 | ![](graph/screenshot.png)| [graph](/graph) |
 | ![](instanced-stream/screenshot.jpg)| [instanced-stream](/instanced-stream) |
 | ![](shadows/screenshot.jpg)| [shadows](/shadows) |
