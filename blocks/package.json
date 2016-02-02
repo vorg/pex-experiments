@@ -13,11 +13,13 @@
     "pex-draw": "^1.0.0-beta.1",
     "pex-fx": "^1.0.0-beta.3",
     "pex-geom": "^1.0.0-beta.1",
+    "pex-gui": "^1.0.0-beta.1",
     "pex-io": "^1.0.0-beta.1",
     "pex-math": "^1.0.0-beta.1",
-    "pex-random": "^0.2.1",
+    "pex-random": "^1.0.0-beta.1",
     "pex-sys": "^1.0.0-beta.7",
-    "primitive-cube": "^1.0.2"
+    "primitive-cube": "^1.0.2",
+    "ramda": "^0.19.1"
   },
   "scripts": {
     "start": "beefy main.js:main.web.js --open -- -i plask -g glslify-promise/transform",
