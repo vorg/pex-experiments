@@ -152,26 +152,26 @@ Window.create({
         this.gui.addTexture2D('Kernel', this.ssaoKernelMap)
         this.gui.addTexture2D('Noise', this.ssaoNoiseMap)
 
-        var prevCode = '';
-        var shaderFile = __dirname + '/SSAO.frag';
-        if (false)
-        var vert = fs.readFileSync(__dirname + '/ScreenImage.vert', 'utf8');
-        if (false)
-        fs.watch(shaderFile, { persistent: true, recursive: false }, function(e, filename) {
-            var frag = fs.readFileSync(shaderFile, 'utf8');
-            if (frag != prevCode) {
-                try {
-                    console.log('COMPILE >>>> ')
-                    var prop = ctx.createProgram(vert, frag)
-                    prop.dispose()
-                    this.fx.ssao.updateFrag(frag)
+        if (!isBrowser) {
+            var prevCode = '';
+            var shaderFile = __dirname + '/SSAO.frag';
+            var vert = fs.readFileSync(__dirname + '/ScreenImage.vert', 'utf8');
+            fs.watch(shaderFile, { persistent: true, recursive: false }, function(e, filename) {
+                var frag = fs.readFileSync(shaderFile, 'utf8');
+                if (frag != prevCode) {
+                    try {
+                        console.log('COMPILE >>>> ')
+                        var prop = ctx.createProgram(vert, frag)
+                        prop.dispose()
+                        this.fx.ssao.updateFrag(frag)
+                    }
+                    catch(e) {
+                        console.log(e)
+                    }
                 }
-                catch(e) {
-                    console.log(e)
-                }
-            }
-            prevCode = frag;
-        }.bind(this));
+                prevCode = frag;
+            }.bind(this));
+        }
     },
     drawScene: function() {
         var ctx = this.getContext()
