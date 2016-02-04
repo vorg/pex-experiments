@@ -64,7 +64,7 @@ void main() {
   vec2 noiseScale = vec2(textureSize.x/4.0, textureSize.y/4.0); // screen = 800x600
 
   //TODO: vec3 fragPos = texture(gPositionDepth, TexCoords).xyz;
-  vec3 normal = texture2D(normalMap, texCoord).rgb * 2.0 - vec3(1.0);
+  vec3 normal = normalize(texture2D(normalMap, texCoord).rgb * 2.0 - vec3(1.0));
   vec3 randomVec = texture2D(noiseMap, texCoord * noiseScale).xyz;
   vec3 dirVec = texture2D(kernelMap, texCoord * noiseScale).xyz;
 
@@ -76,7 +76,7 @@ void main() {
   const int kernelSize = 64;
   float radius = 0.1;
   vec3 lastSample = vec3(0.0);
-  for(int i = 0; i < kernelSize; ++i) { //kernelSize
+  for(int i = 0; i < kernelSize; ++i) {
     vec2 tc = vec2(mod(float(i), 8.0) / 8.0 + 0.5/8.0, floor(float(i) / 8.0) / 8.0 + 0.5/8.0);
     // get sample position
     vec3 sample = TBN * texture2D(kernelMap, tc).rgb; // From tangent to view-space
@@ -87,15 +87,14 @@ void main() {
     offset.xyz = offset.xyz * 0.5 + 0.5; // transform to range 0.0 - 1.0
 
     float sampleDepth = -readDepth(offset.xy);
-    //remoes outline halos
+    //removes outline halos
     float rangeCheck = smoothstep(0.0, 1.0, radius / abs(fragPos.z - sampleDepth));
     occlusion += ((sampleDepth <= sample.z) ? 0.0 : 1.0) * rangeCheck;
-
   }
 
-  occlusion = 1.0 - (occlusion / float(kernelSize)) + 0.5;
-
-  occlusion = pow(occlusion, 2.0);
+  occlusion = 1.0 - (occlusion / float(kernelSize));
 
   gl_FragColor = vec4(occlusion, occlusion, occlusion, 1.0);
+
+  //gl_FragColor.rgb = normal;
 }
