@@ -59,6 +59,11 @@ void main() {
   vec2 texCoord = vec2(gl_FragCoord.x / textureSize.x, gl_FragCoord.y / textureSize.y);
   float depth = readDepth(texCoord);
 
+  if (depth >= far * 0.99) {
+      gl_FragColor = vec4(1.0);
+      return;
+  }
+
   vec3 fragPos = reconstructPositionFromDepth(texCoord, depth);
 
   vec2 noiseScale = vec2(textureSize.x/4.0, textureSize.y/4.0); // screen = 800x600
