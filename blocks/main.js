@@ -11,7 +11,6 @@ var Vec3            = require('pex-math/Vec3')
 var MathUtils       = require('pex-math/Utils')
 var R               = require('ramda')
 var GUI             = require('pex-gui')
-var glslifySync     = require('glslify-sync')
 var fs              = require('fs')
 
 var MAX_DEPTH = 20
@@ -155,7 +154,9 @@ Window.create({
 
         var prevCode = '';
         var shaderFile = __dirname + '/SSAO.frag';
+        if (false)
         var vert = fs.readFileSync(__dirname + '/ScreenImage.vert', 'utf8');
+        if (false)
         fs.watch(shaderFile, { persistent: true, recursive: false }, function(e, filename) {
             var frag = fs.readFileSync(shaderFile, 'utf8');
             if (frag != prevCode) {
