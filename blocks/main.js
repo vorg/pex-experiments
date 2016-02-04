@@ -228,7 +228,7 @@ Window.create({
         var root = this.fx.reset();
         var color = root.render({ drawFunc: this.drawScene.bind(this), depth: this.depthMap });
         var normals = root.render({ drawFunc: this.drawSceneNormals.bind(this), depth: this.depthMap });
-        var ssao = root.ssao({ depthMap: this.depthMap, normalMap: normals, kernelMap: this.ssaoKernelMap, noiseMap: this.ssaoNoiseMap, camera: this.camera, strength: 1, offset: 0.2, width: W, height: H });//.blur3().blur3();
+        var ssao = root.ssao({ depthMap: this.depthMap, normalMap: normals, kernelMap: this.ssaoKernelMap, noiseMap: this.ssaoNoiseMap, camera: this.camera, strength: 1, offset: 0.2, width: W, height: H }).blur3().blur3();
         var fin = color.mult(ssao);
 
         color.blit({x: 0, y: H/2, width: W/2, height: H/2});
