@@ -95,11 +95,11 @@ void main() {
   mat3 TBN = mat3(tangent, bitangent, normal);
 
   float occlusion = 0.0;
-  int kernelSize = 64;
+  const int kernelSize = 64;
   float radius = 0.1;
   vec3 lastSample = vec3(0.0);
-  for(int i = 0; i < kernelSize; ++i) {
-    vec2 tc = vec2(mod(i, 8.0) / 8.0 + 0.5/8.0, floor(i / 8.0) / 8.0 + 0.5/8.0);
+  for(int i = 0; i < kernelSize; ++i) { //kernelSize
+    vec2 tc = vec2(mod(float(i), 8.0) / 8.0 + 0.5/8.0, floor(float(i) / 8.0) / 8.0 + 0.5/8.0);
     // get sample position
     vec3 sample = TBN * texture2D(kernelMap, tc).rgb; // From tangent to view-space
     sample = fragPos + sample * radius;
@@ -115,7 +115,7 @@ void main() {
 
   }
 
-  occlusion = 1.0 - (occlusion / kernelSize) + 0.5;
+  occlusion = 1.0 - (occlusion / float(kernelSize)) + 0.5;
 
   occlusion = pow(occlusion, 2.0);
 
