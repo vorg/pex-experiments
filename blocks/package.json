@@ -22,7 +22,7 @@
     "ramda": "^0.19.1"
   },
   "scripts": {
-    "start": "beefy main.js:main.web.js --open -- -i plask -g glslify-promise/transform",
-    "build": "browserify main.js -i plask -g glslify-promise/transform -o main.web.js"
+    "start": "beefy main.js:main.web.js --open -- -i plask -g glslify-promise/transform -g glslify-sync/transform",
+    "build": "browserify main.js -i plask -g glslify-promise/transform -g glslify-sync/transform -o main.web.js"
   }
 }
