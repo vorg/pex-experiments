@@ -89,7 +89,7 @@ Window.create({
             var sample = [
                 random.float() * 2 - 1,
                 random.float() * 2 - 1,
-                random.float() * 2 - 1,
+                random.float(),
                 1
             ]
             Vec3.normalize(sample)
