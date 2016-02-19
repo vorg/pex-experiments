@@ -35,6 +35,7 @@ Window.create({
         sdfFontVert: { glsl: glslify(__dirname + '/assets/SDFFont.vert') },
         sdfFontFrag: { glsl: glslify(__dirname + '/assets/SDFFont.frag') },
         fontImage: { image: ASSETS_DIR + '/fonts/' + Font.pages[0] },
+        texts: { text: ASSETS_DIR + '/texts.txt' }
     },
     init: function() {
         var ctx = this.getContext();
@@ -77,13 +78,18 @@ Window.create({
         this.gui.addParam('fontSize', this, 'fontSize', { min: 4  , max: 64 });
         this.gui.addParam('debug', this, 'debug');
 
-        this.text = new SpriteTextBox(ctx, text, {
-          fontSize: this.fontSize * DPI / 500,
-          lineHeight: 1.2,
-          font: Font,
-          textures: [ this.fontTex ],
-          wrap: 320 * DPI / 500
-        });
+        this.texts = res.texts.trim().split('\n').map(function(line) {
+            var text = new SpriteTextBox(ctx, line, {
+              fontSize: this.fontSize * DPI / 500,
+              lineHeight: 1.2,
+              font: Font,
+              wrap: 320 * DPI / 500
+            });
+            text.position = [Math.random()*6-3-0.5, Math.random()*6-3-0.5, Math.random()*4-2-2]
+            return text;
+        }.bind(this))
+
+
     },
     draw: function() {
         var ctx = this.getContext();
@@ -99,25 +105,38 @@ Window.create({
 
         ctx.setLineWidth(2);
 
-        this.text.setFontSize(this.fontSize * DPI / 500);
 
         this.gui.draw();
 
         ctx.pushModelMatrix();
-        var s = this.text.opts.scale;
-        ctx.scale([s, -s, s])
-        ctx.translate([-0.5, -0.5, -1])
+        var s = this.texts[0].opts.scale;
+
 
         ctx.bindTexture(this.fontTex, 0)
 
+
         ctx.bindProgram(this.sdfFontProgram);
-        ctx.bindMesh(this.text.mesh);
-        ctx.drawMesh();
+        this.texts.forEach(function(text) {
+            ctx.pushModelMatrix()
+            ctx.translate(text.position)
+            ctx.scale([s, -s, s])
+            text.setFontSize(this.fontSize * DPI / 500);
+            ctx.bindMesh(text.mesh);
+            ctx.drawMesh();
+            ctx.popModelMatrix();
+        }.bind(this))
+
 
         if (this.debug) {
             ctx.bindProgram(this.solidColorProgram);
-            ctx.bindMesh(this.text.debugMesh);
-            ctx.drawMesh();
+            this.texts.forEach(function(text) {
+                ctx.pushModelMatrix()
+                ctx.translate(text.position)
+                ctx.scale([s, -s, s])
+                ctx.bindMesh(text.debugMesh);
+                ctx.drawMesh();
+                ctx.popModelMatrix();
+            }.bind(this))
         }
 
         ctx.popModelMatrix();
