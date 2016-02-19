@@ -9,6 +9,7 @@ MIT, see [LICENSE.md](http://github.com/vorg/pex-experiments/blob/master/LICENSE
 
 | Screenshot  | Name |
 | ------------- | ------------- |
+| [![](sdf-text/screenshot.jpg)](/sdf-text)| [sdf-text](/sdf-text) - SDF Fonts |
 | [![](blocks/screenshot.jpg)](/blocks)| [blocks](/blocks) - procedural geometry and SSAO |
 | [![](graph/screenshot.png)](/graph)| [graph](/graph) - 2D graph drawing and editing |
 | [![](instanced-stream/screenshot.jpg)](/instanced-stream)| [instanced-stream](/instanced-stream) - instancing with shadows |
