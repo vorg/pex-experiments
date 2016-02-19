@@ -40,6 +40,8 @@ Window.create({
         var ctx = this.getContext();
         var res = this.getResources();
 
+        ctx.getGL().getExtension('OES_standard_derivatives')
+
         this.fontTex = ctx.createTexture2D(res.fontImage, res.fontImage.width, res.fontImage.height, { mipmap: false })
 
         this.gui = new GUI(ctx, this.getWidth(), this.getHeight());
