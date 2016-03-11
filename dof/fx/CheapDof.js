@@ -1,22 +1,11 @@
-//Adds another texture to current fx stage
-
-//## Example use
-//     var fx = require('pex-fx');
-//
-//     var color = fx(ctx).render({ drawFunc: this.draw.bind(this) });
-//     var glow = color.downsample().blur3().blur3();
-//     var final = color.add(glow, { scale: 2 });
-//     final.blit();
-//
-
 //## Reference
 
 //Dependencies
 var FXStage = require('pex-fx/FXStage');
 var glslify = require('glslify-sync');
 
-var VERT = glslify(__dirname + '/assets/ScreenImage.vert');
-var FRAG = glslify(__dirname + '/assets/Dof.frag');
+var VERT = glslify(__dirname + '/ScreenImage.vert');
+var FRAG = glslify(__dirname + '/CheapDof.frag');
 
 //### Dof(options)
 //Depth of Field
@@ -25,7 +14,7 @@ var FRAG = glslify(__dirname + '/assets/Dof.frag');
 //  `depthMap` -
 //  `focus plane` -
 
-FXStage.prototype.dof = function (options) {
+FXStage.prototype.cheapDof = function (options) {
     var ctx = this.ctx;
     options = options || {};
     var blurredTex = options.blurredTex;
