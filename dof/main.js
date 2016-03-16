@@ -7,7 +7,8 @@ var isBrowser       = require('is-browser');
 var fx              = require('pex-fx');
 var random          = require('pex-random');
 var GUI             = require('pex-gui');
-var CheapDOF        = require('./fx/CheapDof')
+var CheapDOF        = require('./fx/CheapDof');
+var BoxBlurDOF      = require('./fx/BoxBlurDof');
 
 var State = {
     instances: [],
@@ -98,8 +99,10 @@ Window.create({
 
         var root = this.fx.reset();
         var color = root.render({ drawFunc: this.drawScene.bind(this), depth: this.depthMap });
-        var blurred = color.blur({ iterations: 8, strength: State.blur });
-        var final = color.cheapDof({ blurredTex: blurred, depthMap: this.depthMap, depth: State.depth, depthRange: State.depthRange, camera: this.camera })
+        //cheap
+        //var blurred = color.blur({ iterations: 8, strength: State.blur });
+        //var final = color.cheapDof({ blurredTex: blurred, depthMap: this.depthMap, depth: State.depth, depthRange: State.depthRange, camera: this.camera })
+        var final = color.boxBlurDof({ depthMap: this.depthMap, depth: State.depth, depthRange: State.depthRange, camera: this.camera })
         final.blit()
 
         this.gui.draw();
