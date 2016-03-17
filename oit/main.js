@@ -15,6 +15,11 @@ var Mat4            = require('pex-math/Mat4');
 var computeSmoothNormals = require('./local_modules/geom-compute-smooth-normals');
 var createFx        = require('pex-fx');
 var GUI             = require('pex-gui');
+var OITRenderer     = require('./local_modules/oit-renderer');
+var Texture2D       = require('pex-context/Texture2D');
+var isBrowser       = require('is-browser');
+
+var ASSETS_DIR = isBrowser ? 'assets' : __dirname + '/assets';
 
 Window.create({
     settings: {
@@ -23,8 +28,11 @@ Window.create({
         fullScreen: isBrowser ? true : false
     },
     resources: {
-        showNormalsVert: { glsl: glslify(__dirname + '/assets/ShowNormals.vert') },
-        showNormalsFrag: { glsl: glslify(__dirname + '/assets/ShowNormals.frag') },
+        diffuseVert: { glsl: glslify(__dirname + '/assets/Diffuse.vert') },
+        diffuseFrag: { glsl: glslify(__dirname + '/assets/Diffuse.frag') },
+        texturedVert: { glsl: glslify(__dirname + '/assets/Textured.vert') },
+        texturedFrag: { glsl: glslify(__dirname + '/assets/Textured.frag') },
+        checker: { image: ASSETS_DIR + '/textures/checker-rb.png' }
     },
     init: function() {
         var ctx = this.getContext();
@@ -53,12 +61,18 @@ Window.create({
         this.arcball.setDistance(6.0);
         this.addEventListener(this.arcball);
 
-        this.showNormalsProgram = ctx.createProgram(res.showNormalsVert, res.showNormalsFrag);
-        ctx.bindProgram(this.showNormalsProgram);
+        this.diffuseProgram = ctx.createProgram(res.diffuseVert, res.diffuseFrag);
+        ctx.bindProgram(this.diffuseProgram);
+
+        this.texturedProgram = ctx.createProgram(res.texturedVert, res.texturedFrag);
+        ctx.bindProgram(this.texturedProgram);
+
+        this.checkerTex = ctx.createTexture2D(res.checker);
 
         var cube = createCube();
         var cubeAttributes = [
             { data: cube.positions, location: ctx.ATTRIB_POSITION },
+            { data: cube.uvs, location: ctx.ATTRIB_TEX_COORD_0 },
             { data: cube.normals, location: ctx.ATTRIB_NORMAL }
         ];
         var cubeIndices = { data: cube.cells };
@@ -88,7 +102,13 @@ Window.create({
             this.entities.push({
                 opacity: 1,
                 mesh: this.cubeMesh,
-                transform: cubeTransform
+                transform: cubeTransform,
+                material: {
+                    program: this.texturedProgram,
+                    uniforms: {
+                        uTexture: this.checkerTex
+                    }
+                }
             })
 
             var teapotTransform = Mat4.createFromTranslation(cubePosition);
@@ -97,7 +117,13 @@ Window.create({
             this.entities.push({
                 opacity: 1,
                 mesh: this.teapotMesh,
-                transform: teapotTransform
+                transform: teapotTransform,
+                material: {
+                    program: this.diffuseProgram,
+                    uniforms: {
+                        uColor: [1,0.5,0.5,1]
+                    }
+                }
             })
 
             var planeTransform = Mat4.createFromTranslation(cubePosition);
@@ -105,7 +131,13 @@ Window.create({
             this.entities.push({
                 opacity: 0.5,
                 mesh: this.planeMesh,
-                transform: planeTransform
+                transform: planeTransform,
+                material: {
+                    program: this.diffuseProgram,
+                    uniforms: {
+                        uColor: [0.5,0.85,1,1]
+                    }
+                }
             })
         }
 
@@ -115,6 +147,7 @@ Window.create({
         this.gui.addTexture2D('Screen normal', screenNormalBuf);
         this.gui.addTexture2D('Screen depth', screenDepthBuf);
 
+        this.oitRenderer = new OITRenderer();
     },
     draw: function() {
         var ctx = this.getContext();
@@ -126,7 +159,7 @@ Window.create({
         ctx.clear(ctx.COLOR_BIT | ctx.DEPTH_BIT);
         ctx.setDepthTest(true);
 
-        ctx.bindProgram(this.showNormalsProgram);
+        ctx.bindProgram(this.diffuseProgram);
 
         var opaqueEntities = this.entities.filter(function(e) { return e.opacity == 1; })
         var transparentEntities = this.entities.filter(function(e) { return e.opacity < 1; })
@@ -140,6 +173,17 @@ Window.create({
         opaqueEntities.forEach(function(entity) {
             ctx.pushModelMatrix();
                 ctx.setModelMatrix(entity.transform)
+                var material = entity.material;
+                ctx.bindProgram(material.program);
+                var numTextures = 0;
+                for(var uniformName in material.uniforms) {
+                    var value = material.uniforms[uniformName];
+                    if (value instanceof Texture2D) {
+                        ctx.bindTexture(value, numTextures);
+                        value = numTextures++;
+                    }
+                    material.program.setUniform(uniformName, value)
+                }
                 ctx.bindMesh(entity.mesh);
                 ctx.drawMesh();
             ctx.pushModelMatrix();
@@ -148,6 +192,17 @@ Window.create({
         transparentEntities.forEach(function(entity) {
             ctx.pushModelMatrix();
                 ctx.setModelMatrix(entity.transform)
+                var material = entity.material;
+                ctx.bindProgram(material.program);
+                var numTextures = 0;
+                for(var uniformName in material.uniforms) {
+                    var value = material.uniforms[uniformName];
+                    if (value instanceof Texture2D) {
+                        ctx.bindTexture(value, numTextures);
+                        value = numTextures++;
+                    }
+                    material.program.setUniform(uniformName, value)
+                }
                 ctx.bindMesh(entity.mesh);
                 ctx.drawMesh();
             ctx.pushModelMatrix();
@@ -157,6 +212,15 @@ Window.create({
 
         var root = this.fx.reset();
         root.image(this.screenColorBuf).blit({ width: this.getWidth(), height: this.getHeight() })
+
+        this.oitRenderer.renderOrderIndependentBlendedSamples(
+            ctx,
+            this.getWidth(), this.getHeight(),
+            transparentEntities,
+            this.screenColorBuf, this.screenDepthBuf,
+            null/*gbuffer*/,
+            null/*env*/
+        );
 
         this.gui.draw();
     }
