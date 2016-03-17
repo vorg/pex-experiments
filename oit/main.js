@@ -143,11 +143,18 @@ Window.create({
 
         this.fx = createFx(ctx);
 
+        this.gui.addHeader('Screen');
         this.gui.addTexture2D('Screen color', screenColorBuf);
         this.gui.addTexture2D('Screen normal', screenNormalBuf);
         this.gui.addTexture2D('Screen depth', screenDepthBuf);
+        this.gui.addHeader('OIT').setPosition(10+170, 10);
 
         this.oitRenderer = new OITRenderer();
+    },
+    onKeyPress: function(e) {
+        if (e.str == 'g') {
+            this.gui.toggleEnabled();
+        }
     },
     draw: function() {
         var ctx = this.getContext();
@@ -221,6 +228,17 @@ Window.create({
             null/*gbuffer*/,
             null/*env*/
         );
+
+        this.oitRenderer.textures.forEach(function(tex, texIndex) {
+            //FIXME: another hack with attaching props to existing objects
+            if (!tex.previewControl) {
+                tex.previewControl = this.gui.addTexture2D(tex.name, tex);
+                if (texIndex % 5 == 0) {
+                    tex.previewControl.setPosition(10 + (1 + texIndex/5 | 0) * 170, 30)
+                }
+            }
+
+        }.bind(this));
 
         this.gui.draw();
     }

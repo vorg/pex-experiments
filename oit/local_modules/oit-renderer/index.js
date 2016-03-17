@@ -15,6 +15,8 @@ function OITRenderer() {
     this.m_upsampleFilterRadius = 2;
     this.m_highPrecision = false;
 
+    this.textures = [];
+
     this.reloadWriteDeclaration();
 }
 
@@ -29,17 +31,22 @@ OITRenderer.prototype.allocateOITFramebuffer = function(ctx, w, h, highPrecision
     var color0 = ctx.createTexture2D(null, w, h, { format: ctx.RGBA, type: highPrecision ? ctx.FLOAT : ctx.HALF_FLOAT });
     color0.name = "OIT RT0 (A)" + suffix; //FIXME: attaching props to a class instance
     color0.clearValue = [0,0,0,0];
+    this.textures.push(color0);
 
     var color1 = ctx.createTexture2D(null, w, h, { format: ctx.RGBA, type: highPrecision ? ctx.FLOAT : ctx.UNSIGNED_BYTE });
     color1.name = "OIT RT1 (Brgb, D)" + suffix;
     color1.clearValue = [1,1,1,0];
+    this.textures.push(color1);
 
     var color2 = ctx.createTexture2D(null, w, h, { format: ctx.RGBA, type: highPrecision ? ctx.FLOAT : ctx.UNSIGNED_BYTE }); //RG32F
     color2.name = "OIT RT2 (delta)" + suffix;
+    this.textures.push(color2);
 
     if (!depthTex) {
         //assuming main depth buffer is the same format
         depthTex = ctx.createTexture2D(null, w, h, { magFilter: ctx.NEAREST, minFilter: ctx.NEAREST, format: ctx.DEPTH_COMPONENT, type: ctx.UNSIGNED_SHORT });
+        depthTex.name = "OIT Depth" + suffix;
+        this.textures.push(depthTex);
     }
 
     var fbo = ctx.createFramebuffer([
@@ -56,17 +63,20 @@ OITRenderer.prototype.allocateAllOITBuffers = function(ctx, width, height, highP
     var lowResWidth  = width / this.m_lowResDownsampleFactor;
     var lowResHeight = height / this.m_lowResDownsampleFactor;
 
-    this.m_oitFramebuffer = this.allocateOITFramebuffer(ctx, width, height, highPrecision, screenDepthBuf, "OITRenderer::m_oitFramebuffer");
+    this.m_oitFramebuffer = this.allocateOITFramebuffer(ctx, width, height, highPrecision, screenDepthBuf, "OITRenderer::m_oitFramebuffer", "");
     this.m_oitLowResFramebuffer = this.allocateOITFramebuffer(ctx, lowResWidth, lowResHeight, null, highPrecision, "OITRenderer::m_oitLowResFramebuffer", " [Low-Res]");
 
     var backgroundTexture = ctx.createTexture2D(null, width, height, { format: ctx.RGBA, type: ctx.FLOAT });
     backgroundTexture.name = "OITRenderer::backgroundTexture";
+    this.textures.push(backgroundTexture);
     this.m_backgroundFramebuffer = ctx.createFramebuffer([ { texture: backgroundTexture } ]);
 
     var backgroundBlurredTexture = ctx.createTexture2D(null, width, height, { format: ctx.RGBA, type: ctx.FLOAT });
     backgroundBlurredTexture.name = "OITRenderer::backgroundBlurredTexture";
+    this.textures.push(backgroundBlurredTexture);
     var radiusBlurredTexture = ctx.createTexture2D(null, width, height, { format: ctx.RGBA, type: ctx.FLOAT }); //R32F
     radiusBlurredTexture.name = "OITRenderer::radiusBlurredTexture";
+    this.textures.push(radiusBlurredTexture);
     this.m_blurredBackgroundFramebuffer = ctx.createFramebuffer([
         { texture: backgroundBlurredTexture },
         { texture: radiusBlurredTexture }
@@ -75,6 +85,7 @@ OITRenderer.prototype.allocateAllOITBuffers = function(ctx, width, height, highP
 
     var csOctLowResNormalFramebufferTexture = ctx.createTexture2D(null, width, height, { format: ctx.RGBA, type: ctx.UNSIGNED_BYTE }); //RG8_SNORM
     csOctLowResNormalFramebufferTexture.name = "OITRenderer::csOctLowResNormalFramebufferTexture";
+    this.textures.push(csOctLowResNormalFramebufferTexture);
     this.m_csOctLowResNormalFramebuffer = ctx.createFramebuffer([
         { texture: csOctLowResNormalFramebufferTexture }
     ]);
