@@ -1,5 +1,6 @@
 #ifdef GL_ES
 precision highp float;
+#extension GL_EXT_draw_buffers : require
 #endif
 
 varying vec2 vTexCoord0;

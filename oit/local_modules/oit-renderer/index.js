@@ -1,3 +1,17 @@
+var createFx = require('pex-fx');
+
+var tmpFX = null;
+function blitFramebuffer(ctx, source, target) {
+    var fx = tmpFX = tmpFX || createFx(ctx);
+
+    ctx.pushState(ctx.FRAMEBUFFER_BIT);
+        ctx.bindFramebuffer(target)
+        fx.reset()
+            .image(source)
+            .blit({ width: target.getWidth(), height: target.getHeight() })
+    ctx.popState(ctx.FRAMEBUFFER_BIT);
+}
+
 function OITRenderer() {
     /** A low resolution version of m_oitFramebuffer. */
     this.m_oitLowResFramebuffer = null; //Framebuffer
@@ -30,7 +44,7 @@ OITRenderer.prototype.reloadWriteDeclaration = function() {
 OITRenderer.prototype.allocateOITFramebuffer = function(ctx, w, h, highPrecision, depthTex, name, suffix) {
     var color0 = ctx.createTexture2D(null, w, h, { format: ctx.RGBA, type: highPrecision ? ctx.FLOAT : ctx.HALF_FLOAT });
     color0.name = "OIT RT0 (A)" + suffix; //FIXME: attaching props to a class instance
-    color0.clearValue = [0,0,0,0];
+    color0.clearValue = [1,0,0,1];
     this.textures.push(color0);
 
     var color1 = ctx.createTexture2D(null, w, h, { format: ctx.RGBA, type: highPrecision ? ctx.FLOAT : ctx.UNSIGNED_BYTE });
@@ -92,7 +106,39 @@ OITRenderer.prototype.allocateAllOITBuffers = function(ctx, width, height, highP
     this.m_csOctLowResNormalFramebuffer.name = "OITRenderer::csOctLowResNormalFramebuffer";
 }
 
-OITRenderer.prototype.renderOrderIndependentBlendedSamples = function(ctx, width, height, surfaces, screenColorBuf, screenDepthBuf, gbuffer, env) {
+OITRenderer.prototype.clearAndRenderToOITFramebuffer = function(ctx, oitFramebuffer, rd, surfaceArray, gbuffer, environment) {
+    ctx.bindFramebuffer(oitFramebuffer);
+    var clearValue = oitFramebuffer.getColorAttachment(0).texture.clearValue || [0,0,0,0];
+    ctx.setClearColor(clearValue[0], clearValue[1], clearValue[2], clearValue[3]);
+    ctx.clear(ctx.COLOR_BIT);
+    //TODO: gl.clearBuffer is missing from webgl2
+    return;
+    /*
+
+    // Allow writePixel to read the depth buffer. Make the name unique so that it doesn't conflict with the depth texture
+    // passed to ParticleSurface for soft particle depth testing
+    oitFramebuffer->texture(Framebuffer::DEPTH)->setShaderArgs(oitFramebuffer->uniformTable, "_depthTexture.", Sampler::buffer());
+    oitFramebuffer->uniformTable.setUniform("_clipInfo", gbuffer->camera()->projection().reconstructFromDepthClipInfo());
+
+    rd->pushState(oitFramebuffer); {
+        // Set blending modes
+        // Accum (A)
+        rd->setBlendFunc(RenderDevice::BLEND_ONE,  RenderDevice::BLEND_ONE,                 RenderDevice::BLENDEQ_ADD, RenderDevice::BLENDEQ_SAME_AS_RGB, Framebuffer::COLOR0);
+
+        // Background modulation (beta) and diffusion (D)
+        rd->setBlendFunc(Framebuffer::COLOR1,
+                         RenderDevice::BLEND_ZERO, RenderDevice::BLEND_ONE_MINUS_SRC_COLOR, RenderDevice::BLENDEQ_ADD,
+                         RenderDevice::BLEND_ONE,  RenderDevice::BLEND_ONE,                 RenderDevice::BLENDEQ_ADD);
+
+        // Refraction (delta)
+        rd->setBlendFunc(RenderDevice::BLEND_ONE,  RenderDevice::BLEND_ONE,                 RenderDevice::BLENDEQ_ADD, RenderDevice::BLENDEQ_SAME_AS_RGB, Framebuffer::COLOR2);
+
+        forwardShade(rd, surfaceArray, gbuffer, environment, RenderPassType::SINGLE_PASS_UNORDERED_BLENDED_SAMPLES, m_oitWriteDeclaration, ARBITRARY);
+    } rd->popState();
+    */
+}
+
+OITRenderer.prototype.renderOrderIndependentBlendedSamples = function(ctx, width, height, surfaces, screenColorBuf, screenDepthBuf, gbuffer, environment) {
     if (!surfaces.length) {
         return;
     }
@@ -113,22 +159,20 @@ OITRenderer.prototype.renderOrderIndependentBlendedSamples = function(ctx, width
 
     //TODO: resizeBuffersIfNeeded(rd->width(), rd->height(), lowResWidth, lowResHeight);
 
-    // Re-use the depth from the main framebuffer (for depth testing only)
-
     // Copy the current color buffer to the background buffer, since we'll be compositing into
     // the color buffer at the end of the OIT process
-    /*
-    rd->drawFramebuffer()->blitTo(rd, m_backgroundFramebuffer, false, false, false, false, true);
 
+    blitFramebuffer(ctx, screenColorBuf, this.m_backgroundFramebuffer)
 
     ////////////////////////////////////////////////////////////////////////////////////
     //
     // Accumulation pass over (3D) transparent surfaces
     //
-    const shared_ptr<Framebuffer> oldBuffer = rd->drawFramebuffer();
+    ctx.pushState(ctx.FRAMEBUFFER_BIT);
 
-    clearAndRenderToOITFramebuffer(m_oitFramebuffer, rd, hiResSurfaces, gbuffer, environment);
+    this.clearAndRenderToOITFramebuffer(ctx, this.m_oitFramebuffer, null/*rd*/, hiResSurfaces, gbuffer, environment);
 
+    /*
     if (loResSurfaces.size() > 0) {
         // Create a low-res copy of the depth (and normal) buffers for depth testing and then
         // for use as the key for bilateral upsampling.
@@ -176,8 +220,9 @@ OITRenderer.prototype.renderOrderIndependentBlendedSamples = function(ctx, width
     // Remove the color buffer binding which is shared with the main framebuffer, so that we don't
     // clear it on the next pass through this function. Not done for colored OIT
     // m_oitFramebuffer->set(Framebuffer::COLOR2, shared_ptr<Texture>());
-    rd->setFramebuffer(oldBuffer);
-
+    */
+    ctx.popState(); //ctx.FRAMEBUFFER_BIT
+    /*
     ////////////////////////////////////////////////////////////////////////////////////
     //
     // 2D compositing pass
