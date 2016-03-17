@@ -10,6 +10,7 @@ var renderToCubemap = require('./local_modules/render-to-cubemap');
 var downsampleCubemap = require('./local_modules/downsample-cubemap');
 var convolveCubemap = require('./local_modules/convolve-cubemap');
 var createSphere    = require('primitive-sphere');
+var Vec3            = require('pex-math/Vec3');
 var GUI             = require('pex-gui');
 
 var CUBEMAP_SIZE = 128; //->128 -> 64 -> 32 -> 16
@@ -66,10 +67,10 @@ Window.create({
         var sphereIndices = { data: sphere.cells };
         var sphereMesh = this.sphereMesh = ctx.createMesh(sphereAttributes, sphereIndices, ctx.TRIANGLES);
 
-        this.reflectionMap = ctx.createTextureCube(null, CUBEMAP_SIZE, CUBEMAP_SIZE, { minFilter: ctx.NEAREST, magFilter: ctx.NEAREST });
-        this.reflectionMap64 = ctx.createTextureCube(null, CUBEMAP_SIZE/2, CUBEMAP_SIZE/2, { minFilter: ctx.NEAREST, magFilter: ctx.NEAREST });
-        this.reflectionMap32 = ctx.createTextureCube(null, CUBEMAP_SIZE/4, CUBEMAP_SIZE/4, { minFilter: ctx.NEAREST, magFilter: ctx.NEAREST });
-        this.reflectionMap16 = ctx.createTextureCube(null, CUBEMAP_SIZE/8, CUBEMAP_SIZE/8, { minFilter: ctx.NEAREST, magFilter: ctx.NEAREST });
+        this.reflectionMap = ctx.createTextureCube(null, CUBEMAP_SIZE, CUBEMAP_SIZE, { minFilter: ctx.LINEAR, magFilter: ctx.LINEAR });
+        this.reflectionMap64 = ctx.createTextureCube(null, CUBEMAP_SIZE/2, CUBEMAP_SIZE/2, { minFilter: ctx.LINEAR, magFilter: ctx.LINEAR });
+        this.reflectionMap32 = ctx.createTextureCube(null, CUBEMAP_SIZE/4, CUBEMAP_SIZE/4, { minFilter: ctx.LINEAR, magFilter: ctx.LINEAR });
+        this.reflectionMap16 = ctx.createTextureCube(null, CUBEMAP_SIZE/8, CUBEMAP_SIZE/8, { minFilter: ctx.LINEAR, magFilter: ctx.LINEAR });
         this.irradianceMap = ctx.createTextureCube(null, CUBEMAP_SIZE/8, CUBEMAP_SIZE/8);
 
         this.gui = new GUI(ctx, this.getWidth(), this.getHeight())
@@ -81,11 +82,14 @@ Window.create({
 
         var s = 6;
 
-        entities.push({ mesh: cubeMesh, position: [0,-1,0], scale: [s, 0.1, s], material: { program: this.reflectionProgram, uniforms: { uColor: [0.1,0.1,0.1,1], uReflectionMap: this.reflectionMap, uReflectivity: 0 } }}) //floor
-        entities.push({ mesh: cubeMesh, position: [0,1,0], scale: [s, 0.1, s], material: { program: this.reflectionProgram, uniforms: { uColor: [0.6,0.6,0.6,1], uReflectionMap: this.reflectionMap, uReflectivity: 0 } }}) //ceeling
-        entities.push({ mesh: cubeMesh, position: [-s/2, 0, 0], scale: [0.1, 2, s], material: { program: this.reflectionProgram, uniforms: { uColor: [1,0.3,0.3,1], uReflectionMap: this.reflectionMap, uReflectivity: 0 } }}) //left
-        entities.push({ mesh: cubeMesh, position: [s/2, 0, 0], scale: [0.1, 2, s], material: { program: this.reflectionProgram, uniforms: { uColor: [1,0.3,0.3,1], uReflectionMap: this.reflectionMap, uReflectivity: 0 } }}) //right
-        entities.push({ mesh: cubeMesh, position: [0, 0, s/2], scale: [s, 2, 0.1], material: { program: this.reflectionProgram, uniforms: { uColor: [0.2,0.2,0.42,1], uReflectionMap: this.reflectionMap, uReflectivity: 0 } }}) //back
+        var uBBoxMin = [-s/2+0.05, -1+0.025, -s/2+0.05];
+        var uBBoxMax = [s/2-0.05, 1-0.025, s/2-0.05];
+
+        entities.push({ mesh: cubeMesh, position: [0,-1,0], scale: [s, 0.1, s], material: { program: this.reflectionProgram, uniforms: { uColor: [0.02,0.02,0.02,1], uReflectionMap: this.reflectionMap64, uFinalReflectivity: 0.1, uReflectivity: 0, uCubeMapPos: [0,0,0], uBBoxMin: uBBoxMin, uBBoxMax: uBBoxMax } }}) //floor
+        entities.push({ mesh: cubeMesh, position: [0,1,0], scale: [s, 0.1, s], material: { program: this.reflectionProgram, uniforms: { uColor: [0.6,0.6,0.6,1], uReflectionMap: this.reflectionMap, uFinalReflectivity: 0.01, uReflectivity: 0, uCubeMapPos: [0,0,0], uBBoxMin: uBBoxMin, uBBoxMax: uBBoxMax } }}) //ceeling
+        entities.push({ mesh: cubeMesh, position: [-s/2, 0, 0], scale: [0.1, 2, s], material: { program: this.reflectionProgram, uniforms: { uColor: [1,0.3,0.3,1], uReflectionMap: this.reflectionMap, uFinalReflectivity: 0.0, uReflectivity: 0, uCubeMapPos: [0,0,0], uBBoxMin: uBBoxMin, uBBoxMax: uBBoxMax } }}) //left
+        entities.push({ mesh: cubeMesh, position: [s/2, 0, 0], scale: [0.1, 2, s], material: { program: this.reflectionProgram, uniforms: { uColor: [1,0.3,0.3,1], uReflectionMap: this.reflectionMap, uFinalReflectivity: 0.0, uReflectivity: 0, uCubeMapPos: [0,0,0], uBBoxMin: uBBoxMin, uBBoxMax: uBBoxMax } }}) //right
+        entities.push({ mesh: cubeMesh, position: [0, 0, s/2], scale: [s, 2, 0.1], material: { program: this.reflectionProgram, uniforms: { uColor: [0.2,0.2,0.42,1], uReflectionMap: this.reflectionMap, uFinalReflectivity: 0.0, uReflectivity: 0, uCubeMapPos: [0,0,0], uBBoxMin: uBBoxMin, uBBoxMax: uBBoxMax } }}) //back
 
         //screens
         for(var i=-s/2+0.5; i<=s/2-0.5; i++) {
@@ -95,7 +99,25 @@ Window.create({
                 scale: [0.6, 0.8, 0.2],
                 material: {
                     program: this.reflectionProgram,
-                    uniforms: { uColor: [1,1,1,1], uReflectionMap: this.reflectionMap, uReflectivity: 0 }
+                    uniforms: { uColor: [1,1,1,1], uReflectionMap: this.reflectionMap, uReflectivity: 0, uFinalReflectivity: 0.1, uCubeMapPos: [0,0,0], uBBoxMin: uBBoxMin, uBBoxMax: uBBoxMax }
+                }
+            })
+            entities.push({
+                mesh: cubeMesh,
+                position: [s/2, 0, i],
+                scale: [0.2, 0.8, 0.6],
+                material: {
+                    program: this.reflectionProgram,
+                    uniforms: { uColor: [1,1,0,1], uReflectionMap: this.reflectionMap, uReflectivity: 0, uFinalReflectivity: 0.1, uCubeMapPos: [0,0,0], uBBoxMin: uBBoxMin, uBBoxMax: uBBoxMax }
+                }
+            })
+            entities.push({
+                mesh: cubeMesh,
+                position: [-s/2, 0, i],
+                scale: [0.2, 0.8, 0.6],
+                material: {
+                    program: this.reflectionProgram,
+                    uniforms: { uColor: [0,1,0.5,1], uReflectionMap: this.reflectionMap, uReflectivity: 0, uFinalReflectivity: 0.1, uCubeMapPos: [0,0,0], uBBoxMin: uBBoxMin, uBBoxMax: uBBoxMax }
                 }
             })
         }
@@ -110,7 +132,9 @@ Window.create({
                 uniforms: {
                     uColor: [0,0,0,1],
                     uReflectionMap: this.reflectionMap,
-                    uReflectivity: 1
+                    uReflectivity: 1,
+                    uFinalReflectivity: 1,
+                    uCubeMapPos: [0,0,0], uBBoxMin: uBBoxMin, uBBoxMax: uBBoxMax
                 }
             }
         })
@@ -125,11 +149,11 @@ Window.create({
                 uniforms: {
                     uColor: [0,0,0,1],
                     uReflectionMap: this.irradianceMap,
+                    uFinalReflectivity: 1,
                     uReflectivity: 1
                 }
             }
         })
-
     },
     drawScene: function(final) {
         var ctx = this.getContext();
@@ -140,11 +164,18 @@ Window.create({
                 return;
             }
             if (!entity.finalOnly) {
-                entity.material.uniforms.uReflectivity = final ? 0.3 : 0;
+                entity.material.uniforms.uReflectivity = final ? entity.material.uniforms.uFinalReflectivity : 0;
             }
             ctx.pushModelMatrix();
-            ctx.translate(entity.position);
-            ctx.scale(entity.scale);
+            if (entity.position) {
+                ctx.translate(entity.position);
+            }
+            if (entity.scale) {
+                ctx.scale(entity.scale);
+            }
+            if (entity.rotation) {
+                ctx.rotate(entity.rotation[0], entity.rotation[1]);
+            }
             ctx.bindMesh(entity.mesh);
             var material = entity.material;
             ctx.bindProgram(material.program);

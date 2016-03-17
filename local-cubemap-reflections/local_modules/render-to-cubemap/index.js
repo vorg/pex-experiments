@@ -13,6 +13,7 @@ var sides = [
 var fbo = null;
 var projectionMatrix = null;
 var viewMatrix = null;
+var depthBuf = null;
 
 function renderToCubemap(ctx, cubemap, drawScene, level) {
     level = level || 0;
@@ -28,6 +29,10 @@ function renderToCubemap(ctx, cubemap, drawScene, level) {
     ctx.setProjectionMatrix(projectionMatrix);
     sides.forEach(function(side, sideIndex) {
         fbo.setColorAttachment(0, ctx.TEXTURE_CUBE_MAP_POSITIVE_X + sideIndex, cubemap.getHandle(), level);
+        if (!depthBuf) {
+            depthBuf = ctx.createTexture2D(null, cubemap.getWidth(), cubemap.getHeight(), { magFilter: ctx.NEAREST, minFilter: ctx.NEAREST, format: ctx.DEPTH_COMPONENT, type: ctx.UNSIGNED_SHORT });
+        }
+        fbo.setDepthAttachment(ctx.TEXTURE_2D, depthBuf.getHandle(), level);
         ctx.setClearColor(side.color[0], side.color[1], side.color[2], 1);
         //ctx.setClearColor(0, 0, 0, 1);
         ctx.clear(ctx.COLOR_BIT | ctx.DEPTH_BIT);
