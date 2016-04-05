@@ -1,0 +1,19 @@
+{
+  "name": "v1.0_repo",
+  "version": "1.0.0",
+  "description": "Collection of experiments using [PEX](http://pex.gl) library for WebGL.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vorg/pex-experiments.git"
+  },
+  "author": "Marcin Ignac <marcin.ignac@gmail.com> (http://marcinignac.com/)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/vorg/pex-experiments/issues"
+  },
+  "homepage": "https://github.com/vorg/pex-experiments#readme"
+}
