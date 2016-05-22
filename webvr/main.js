@@ -40,6 +40,29 @@ Mat4.perspectiveFromFieldOfView = function (out, fov, near, far) {
     return out;
 }
 
+function CardboardViewer(params) {
+  // A machine readable ID.
+  this.id = params.id;
+  // A human readable label.
+  this.label = params.label;
+
+  // Field of view in degrees (per side).
+  this.fov = params.fov;
+
+  // Distance between lens centers in meters.
+  this.interLensDistance = params.interLensDistance;
+  // Distance between viewer baseline and lens center in meters.
+  this.baselineLensDistance = params.baselineLensDistance;
+  // Screen-to-lens distance in meters.
+  this.screenLensDistance = params.screenLensDistance;
+
+  // Distortion coefficients.
+  this.distortionCoefficients = params.distortionCoefficients;
+  // Inverse distortion coefficients.
+  // TODO: Calculate these from distortionCoefficients in the future.
+  this.inverseCoefficients = params.inverseCoefficients;
+}
+
 
 var State = {
     vrDisplay: null,
@@ -76,8 +99,8 @@ function init(win) {
     State.cubeMesh = ctx.createMesh(cubeAttributes, cubeIndices, ctx.TRIANGLES);
 
     random.seed(52);
-    for(var i=0; i<200; i++) {
-        var pos = random.vec3(20);
+    for(var i=0; i<50; i++) {
+        var pos = random.vec3(10);
         if (Vec3.length(pos) > 2) {
             State.cubes.push(pos)
         }
@@ -98,6 +121,26 @@ function initVR() {
             console.log('initVR', 'pose', pose);
             console.log('initVR', 'position', State.position);
             console.log('initVR', 'orientation', State.orientation);
+            //CardboardViewer
+            var altergazeViewer = new CardboardViewer({
+                id: 'Altergaze5C',
+                label: 'Altergaze (iPhone 5C)',
+                fov: 40,
+                interLensDistance: 0.050,
+                baselineLensDistance: 0.027,
+                screenLensDistance: 0.026,
+                distortionCoefficients: [0.19, 0.07],
+                //this should be calculated from distrotion coefficient but it seems to be unused
+                //https://github.com/borismus/webvr-polyfill/pull/73
+                inverseCoefficients: [-0.4410035, 0.42756155, -0.4804439, 0.5460139,
+                  -0.58821183, 0.5733938, -0.48303202, 0.33299083, -0.17573841,
+                  0.0651772, -0.01488963, 0.001559834]
+            })
+            //TODO: add this as a normal cardboard chooser option
+            if (State.vrDisplay.onViewerChanged_) {
+                console.log('Setting altergaze viewr')
+                State.vrDisplay.onViewerChanged_(altergazeViewer)
+            }
         });
     }
 }
@@ -184,6 +227,10 @@ function draw(win) {
     else {
         ctx.setViewport(0, 0, W, H)
         drawSceneEye(ctx, W, H, 45)
+    }
+
+    if (win.getTime().getElapsedFrames() % 30 == 0) {
+        console.log('FSP : ' + win.getTime().getFPS());
     }
 }
 
