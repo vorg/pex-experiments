@@ -15,6 +15,7 @@
     "pex-gui": "^1.3.0",
     "pex-io": "^1.1.0",
     "pex-math": "^1.0.0",
+    "pex-random": "^1.0.0",
     "pex-sys": "^1.3.1",
     "primitive-cube": "^1.0.2",
     "webvr-polyfill": "^0.9.10"

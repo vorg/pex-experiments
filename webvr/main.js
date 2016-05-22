@@ -8,6 +8,7 @@ var WebVRPolyfil    = require('webvr-polyfill');
 var Vec3            = require('pex-math/Vec3');
 var Vec4            = require('pex-math/Vec4');
 var Mat4            = require('pex-math/Mat4');
+var random          = require('pex-random')
 
 //Generates a perspective projection matrix with the given field of view.
 //this is primarily useful for generating projection matrices to be used
@@ -46,7 +47,8 @@ var State = {
     position: [0, 0, 0],
     projectionMat: Mat4.create(),
     viewMat: Mat4.create(),
-    quatMat: Mat4.create()
+    quatMat: Mat4.create(),
+    cubes: []
 }
 
 function init(win) {
@@ -73,6 +75,14 @@ function init(win) {
     var cubeIndices = { data: cube.cells };
     State.cubeMesh = ctx.createMesh(cubeAttributes, cubeIndices, ctx.TRIANGLES);
 
+    random.seed(52);
+    for(var i=0; i<200; i++) {
+        var pos = random.vec3(20);
+        if (Vec3.length(pos) > 2) {
+            State.cubes.push(pos)
+        }
+    }
+
     initVR()
 }
 
@@ -90,26 +100,18 @@ function initVR() {
             console.log('initVR', 'orientation', State.orientation);
         });
     }
-    var debug = State.debug = document.createElement('div')
-    debug.style.position = 'absolute';
-    debug.style.left = '0'
-    debug.style.top = '0'
-    debug.style.background = 'white';
-    debug.style.color = 'black'
-    debug.innerText = 'debug'
-    debug.style.padding = '2px';
-    debug.style.fontFamily = 'monospace'
-    document.body.appendChild(debug)
 }
 
 function drawScene(ctx) {
     ctx.bindProgram(State.showNormalsProgram);
     ctx.bindMesh(State.cubeMesh);
 
-    ctx.pushModelMatrix();
-    ctx.translate([0, 0, -7])
-    ctx.drawMesh();
-    ctx.popModelMatrix();
+    for(var i=0; i<State.cubes.length; i++) {
+        ctx.pushModelMatrix();
+        ctx.translate(State.cubes[i])
+        ctx.drawMesh();
+        ctx.popModelMatrix();
+    }
 
     ctx.pushModelMatrix();
     ctx.translate([0, -1, 0])
@@ -141,8 +143,6 @@ function drawSceneEye(ctx, width, height, eyeFov, eyeOffset) {
 
     Mat4.invert(viewMat);
     ctx.setViewMatrix(viewMat);
-
-    State.debug.innerText = JSON.stringify(eyeFov);
 
     drawScene(ctx)
 }
@@ -191,7 +191,8 @@ Window.create({
     settings: {
         width:  1280,
         height: 720,
-        fullScreen: isBrowser ? true : true
+        fullScreen: true,
+        pixelRatio: 2
     },
     resources: {
         showNormalsVert: { glsl: glslify(__dirname + '/assets/ShowNormals.vert') },
