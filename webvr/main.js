@@ -41,28 +41,24 @@ Mat4.perspectiveFromFieldOfView = function (out, fov, near, far) {
 }
 
 function CardboardViewer(params) {
-  // A machine readable ID.
-  this.id = params.id;
-  // A human readable label.
-  this.label = params.label;
-
-  // Field of view in degrees (per side).
-  this.fov = params.fov;
-
-  // Distance between lens centers in meters.
-  this.interLensDistance = params.interLensDistance;
-  // Distance between viewer baseline and lens center in meters.
-  this.baselineLensDistance = params.baselineLensDistance;
-  // Screen-to-lens distance in meters.
-  this.screenLensDistance = params.screenLensDistance;
-
-  // Distortion coefficients.
-  this.distortionCoefficients = params.distortionCoefficients;
-  // Inverse distortion coefficients.
-  // TODO: Calculate these from distortionCoefficients in the future.
-  this.inverseCoefficients = params.inverseCoefficients;
+    this.id = params.id;
+    this.label = params.label;
+    this.fov = params.fov;
+    this.interLensDistance = params.interLensDistance;
+    this.baselineLensDistance = params.baselineLensDistance;
+    this.screenLensDistance = params.screenLensDistance;
+    this.distortionCoefficients = params.distortionCoefficients;
+    this.inverseCoefficients = params.inverseCoefficients;
 }
 
+function nop(e) {
+}
+
+function throwError(msg) {
+    return function() {
+        throw new Error(msg);
+    }
+}
 
 var State = {
     vrDisplay: null,
@@ -81,6 +77,8 @@ function init(win) {
 
     State.showNormalsProgram = ctx.createProgram(res.showNormalsVert, res.showNormalsFrag);
     ctx.bindProgram(State.showNormalsProgram);
+    State.showNormalsProgram2 = ctx.createProgram(res.showNormalsVert, res.showNormalsFrag);
+    ctx.bindProgram(State.showNormalsProgram);
 
     var cube = createCube();
     var cubeAttributes = [
@@ -97,6 +95,7 @@ function init(win) {
     ];
     var cubeIndices = { data: cube.cells };
     State.cubeMesh = ctx.createMesh(cubeAttributes, cubeIndices, ctx.TRIANGLES);
+    State.cubeMesh2 = ctx.createMesh(cubeAttributes, cubeIndices, ctx.TRIANGLES);
 
     random.seed(52);
     for(var i=0; i<50; i++) {
@@ -106,10 +105,10 @@ function init(win) {
         }
     }
 
-    initVR()
+    initVR(win)
 }
 
-function initVR() {
+function initVR(win) {
     if (navigator.getVRDisplays) {
         navigator.getVRDisplays().then(function (displays) {
             console.log('initVR', displays[0].displayName);
@@ -121,8 +120,9 @@ function initVR() {
             console.log('initVR', 'pose', pose);
             console.log('initVR', 'position', State.position);
             console.log('initVR', 'orientation', State.orientation);
+
             //CardboardViewer
-            var altergazeViewer = new CardboardViewer({
+            State.altergazeViewer = new CardboardViewer({
                 id: 'Altergaze5C',
                 label: 'Altergaze (iPhone 5C)',
                 fov: 40,
@@ -137,10 +137,26 @@ function initVR() {
                   0.0651772, -0.01488963, 0.001559834]
             })
             //TODO: add this as a normal cardboard chooser option
-            if (State.vrDisplay.onViewerChanged_) {
-                console.log('Setting altergaze viewr')
-                State.vrDisplay.onViewerChanged_(altergazeViewer)
-            }
+            //add cardboard button
+            var cardboardBtn = document.createElement('div')
+            var cardboardIcon = new Image();
+            cardboardIcon.src = 'assets/cardboard64.png';
+            cardboardIcon.marginLeft = '-32px';
+            cardboardBtn.appendChild(cardboardIcon);
+            cardboardBtn.style.position = 'fixed';
+            cardboardBtn.style.left = '50%';
+            cardboardBtn.style.bottom = '20px'
+            document.body.appendChild(cardboardBtn)
+            cardboardBtn.addEventListener('click', function() {
+                cardboardBtn.style.display = 'none'
+                onVRRequestPresent(win)
+            })
+            //onVRRequestPresent(win) //TEMP
+            //cardboardBtn.style.display = 'none' //TEMP
+            window.addEventListener('vrdisplaypresentchange', onVRPresentChange, false);
+        }).catch(function(e) {
+            console.log(e);
+            console.log(e.stack);
         });
     }
 }
@@ -148,6 +164,8 @@ function initVR() {
 function drawScene(ctx) {
     ctx.bindProgram(State.showNormalsProgram);
     ctx.bindMesh(State.cubeMesh);
+    ctx.bindProgram(State.showNormalsProgram2);
+    ctx.bindMesh(State.cubeMesh2);
 
     for(var i=0; i<State.cubes.length; i++) {
         ctx.pushModelMatrix();
@@ -163,13 +181,13 @@ function drawScene(ctx) {
     ctx.popModelMatrix();
 }
 
-function drawSceneEye(ctx, width, height, eyeFov, eyeOffset) {
+function drawSceneView(ctx, width, height, eye) {
     var projectionMat = State.projectionMat;
-    if (eyeFov.leftDegrees) {
-        Mat4.perspectiveFromFieldOfView(projectionMat, eyeFov,  0.1, 1000)
+    if (eye) {
+        Mat4.perspectiveFromFieldOfView(projectionMat, eye.fieldOfView,  0.1, 1000)
     }
     else {
-        Mat4.perspective(projectionMat, eyeFov, width/height, 0.1, 1000)
+        Mat4.perspective(projectionMat, 60, width/height, 0.1, 1000)
     }
     ctx.setProjectionMatrix(projectionMat);
 
@@ -179,9 +197,9 @@ function drawSceneEye(ctx, width, height, eyeFov, eyeOffset) {
     Mat4.translate(viewMat, State.position)
     Mat4.fromQuat(quatMat, State.orientation); 
     Mat4.mult(viewMat, quatMat)
-    
-    if (eyeOffset) {
-        Mat4.translate(viewMat, eyeOffset)
+
+    if (eye) {
+        Mat4.translate(viewMat, eye.offset)
     }
 
     Mat4.invert(viewMat);
@@ -202,6 +220,7 @@ function updatePose() {
     }
 }
 
+//TODO: Match VR Display refresh rate `vrDisplay.requestAnimationFrame(onAnimationFrame)`
 function draw(win) {
     updatePose();
 
@@ -214,25 +233,88 @@ function draw(win) {
     ctx.setDepthTest(true);
    
     //cardboard / mobile
-    if (State.vrDisplay && State.vrDisplay.getEyeParameters("left")) {
+    if (State.vrDisplay && State.vrDisplay.isPresenting) {
         var leftEye = State.vrDisplay.getEyeParameters("left");
         ctx.setViewport(0, 0, W/2, H)
-        drawSceneEye(ctx, W/2, H, leftEye.fieldOfView, leftEye.offset);
+        drawSceneView(ctx, W/2, H, leftEye);
         
         var rightEye = State.vrDisplay.getEyeParameters("right");
         ctx.setViewport(W/2, 0, W/2, H)
-        drawSceneEye(ctx, W/2, H, rightEye.fieldOfView, rightEye.offset)
+        drawSceneView(ctx, W/2, H, rightEye)
+
+        State.vrDisplay.submitFrame(State.pose);
     }
     //desktop browser
     else {
         ctx.setViewport(0, 0, W, H)
-        drawSceneEye(ctx, W, H, 45)
+        drawSceneView(ctx, W, H)
     }
 
     if (win.getTime().getElapsedFrames() % 30 == 0) {
-        console.log('FSP : ' + win.getTime().getFPS());
+        //console.log('FSP : ' + win.getTime().getFPS());
     }
 }
+
+//TODO: override pex-sys canvas resizing
+function onResize(win) {
+    if (State.vrDisplay && State.vrDisplay.isPresenting) {
+        var canvas = win.getContext().getGL().canvas;
+        var leftEye = State.vrDisplay.getEyeParameters("left");
+        var rightEye = State.vrDisplay.getEyeParameters("right");
+        canvas.width = Math.max(leftEye.renderWidth, rightEye.renderWidth) * 2 * win.getPixelRatio();
+        canvas.height = Math.max(leftEye.renderHeight, rightEye.renderHeight) * win.getPixelRatio();
+
+        //prevent iOS Safari bars from showing after rotation
+        canvas.style.position = 'relative';
+        canvas.parentNode.style.position = 'relative';
+    }
+}
+
+function onVRRequestPresent (win) {
+    console.log('onVRRequestPresent', win.getContext().getGL().canvas)
+    State.vrDisplay.requestPresent([{ source: win.getContext().getGL().canvas }])
+        .then(nop, throwError('VrDisplay requestPresent failed'))
+}
+
+function onVRExitPresent (win) {
+    State.vrDisplay.exitPresent([{ source: win.getContext().getGL().canvas }])
+        .then(nop, throwError('VrDisplay exitPresent failed'))
+}
+
+function onVRPresentChange () {
+    console.log('onVRPresentChange isPresenting:', State.vrDisplay.isPresenting)
+
+    //TEMP: Inject AltergazeVR Headset spec
+    if (State.vrDisplay.onViewerChanged_) {
+        console.log('Setting altergaze viewr')
+        State.vrDisplay.onViewerChanged_(State.altergazeViewer)
+    }
+
+    // When we begin or end presenting, the canvas should be resized to the
+    // recommended dimensions for the display.
+    //TODO: onResize();
+    if (State.vrDisplay.isPresenting) {
+        if (State.vrDisplay.capabilities.hasExternalDisplay) {
+            // Because we're not mirroring any images on an external screen will
+            // freeze while presenting. It's better to replace it with a message
+            // indicating that content is being shown on the VRDisplay.
+            //TODO: presentingMessage.style.display = "block";
+            // On devices with an external display the UA may not provide a way
+            // to exit VR presentation mode, so we should provide one ourselves.
+            //TODO: VRSamplesUtil.removeButton(vrPresentButton);
+            //TODO: vrPresentButton = VRSamplesUtil.addButton("Exit VR", "E", "media/icons/cardboard64.png", onVRExitPresent);
+        }
+    } else {
+        // If we have an external display take down the presenting message and
+        // change the button back to "Enter VR".
+        if (State.vrDisplay.capabilities.hasExternalDisplay) {
+            //TODO: presentingMessage.style.display = "";
+            //TODO: VRSamplesUtil.removeButton(vrPresentButton);
+            //TODO: vrPresentButton = VRSamplesUtil.addButton("Enter VR", "E", "media/icons/cardboard64.png", onVRRequestPresent);
+        }
+    }
+}
+
 
 Window.create({
     settings: {
@@ -250,5 +332,8 @@ Window.create({
     },
     draw: function() {
         draw(this);
+    },
+    onWindowResize: function() {
+        onResize(this);
     }
 })

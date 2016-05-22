@@ -21,7 +21,7 @@
     "webvr-polyfill": "^0.9.10"
   },
   "scripts": {
-    "start": "beefy main.js:main.web.js --open -- -i plask -g glslify-promise/transform",
+    "start": "beefy main.js:main.web.js --open --live -- -i plask -g glslify-promise/transform",
     "build": "browserify main.js -i plask -g glslify-promise/transform -o main.web.js"
   }
 }
