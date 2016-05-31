@@ -670,7 +670,6 @@ function plasma(fd) {
     var shiftY = fd.params[4]*(Math.PI/128.0);
    	var c, cy;
     var pixel = 0;
-    console.log('numX numY', numX, numY)
 
    	for (var y = 0; y < 256; y++) {
 		for (var x = 0; x < 256; x++) {
@@ -782,7 +781,6 @@ function mixMap2(fd) {
 // 			2 - src2
 function layerOperator(fd)
 {
-    console.log('vtg:layerOperator nSrcs', fd.nSrcs)
     if (fd.nSrcs < 2) return;
 
     var src1 = fd.sources[0];
@@ -1062,9 +1060,11 @@ function makeArray(n) {
     return result;
 }
 
-function loadFilterFromBuffer(buf, offset, tab) {
-    tab = tab || ''
-    //console.log('vtg:loadFilterFromBuffer offset', offset, 'buf.len', buf.byteLength)
+function loadFilterFromBuffer(arraybuf, offset, tab, verbose) {
+    if (verbose) {
+        tab = tab || ''
+        console.log(tab + 'vtg: offset', offset, 'buf.len', arraybuf.byteLength)
+    }
 
     //Filter Data
     var fd = {
@@ -1081,9 +1081,9 @@ function loadFilterFromBuffer(buf, offset, tab) {
         filterFunc: null
     };
 
-    fd.id = buf.readUInt16LE(offset);
+    fd.id = new Uint16Array(arraybuf.slice(offset, offset + 2))[0];
     offset += 2
-    console.log(tab + 'vtg: id', fd.id, FilterNameMap[fd.id])
+    if (verbose) console.log(tab + 'vtg: id', fd.id, FilterNameMap[fd.id])
     if (fd.id == 0) {
         return {
             offset: offset,
@@ -1091,30 +1091,32 @@ function loadFilterFromBuffer(buf, offset, tab) {
         };
     }
 
+    var buf = new Uint8Array(arraybuf)
+
     fd.params = Array.prototype.slice.call(buf, offset, offset + MAX_PARAMS_SIZE)
     offset += MAX_PARAMS_SIZE
-    console.log(tab + 'vtg: params', fd.params)
+    if (verbose) console.log(tab + 'vtg: params', fd.params)
 
-    fd.nSrcs = buf.readUInt8(offset)
+    fd.nSrcs = buf[offset]
     offset += 1
-    console.log(tab + 'vtg: nSrcs', fd.nSrcs)
+    if (verbose) console.log(tab + 'vtg: nSrcs', fd.nSrcs)
 
     fd.sources = [];
     for(var i=0; i<fd.nSrcs; i++) {
-        var result = loadFilterFromBuffer(buf, offset, tab + '    ')
+        var result = loadFilterFromBuffer(arraybuf, offset, tab + '    ', verbose)
         if (result) {
             offset = result.offset;
             fd.sources[i] = result.data
         }
     }
     fd.filterFunc = filterFactory(fd.id)
-    console.log(tab + 'vtg: apply', fd.id)
+    if (verbose) console.log(tab + 'vtg: apply', fd.id)
     fd.filterFunc(fd)
     //console.log(tab + 'vtg: result', fd.id, fd.pixels.slice(10000, 10000+20).join(','))
 
     //creator category
     if (fd.id > 0 && fd.id < 10) {
-        console.log(tab + 'vtg: layerOp', fd.params[0])
+        if (verbose) console.log(tab + 'vtg: layerOp', fd.params[0])
         layerOp(fd.params[0], fd, fd.sources[0])
     }
 
@@ -1124,112 +1126,29 @@ function loadFilterFromBuffer(buf, offset, tab) {
     }
 }
 
-function parseVTG(buf) {
+function parseVTG(arraybuf, verbose) {
+    verbose = verbose || false;
     var offset = 0;
 
+    var buf = new Uint8Array(arraybuf)
+
     var version = [
-        buf.readUInt8(offset++),
-        buf.readUInt8(offset++),
-        buf.readUInt8(offset++)
+        buf[offset++],
+        buf[offset++],
+        buf[offset++]
     ].map(function(c) {
         return String.fromCharCode(c)
     })
 
     offset++; //version header is 4 bytes long
 
-    console.log(Array.prototype.slice.call(buf).join(','))
+    if (verbose) console.log('vtg:parse')
+    if (verbose) console.log('vtg:parseVTG version', version) //should print V T G
+    if (verbose) console.log('vrg:buf', buf.join(','))
 
-    console.log('vtg:parse')
-    console.log('vtg:parseVTG version', version) //should print V T G
-
-    var result = loadFilterFromBuffer(buf, offset)
-    console.log('vtg:parse end', result.offset, buf.byteLength)
+    var result = loadFilterFromBuffer(arraybuf, offset, '', verbose)
+    if (verbose) console.log('vtg:parse end', result.offset, arraybuf.byteLength)
     return result.data;
 }
 
 module.exports = parseVTG;
-
-//TEST
-var fs = require('fs')
-var GUI = require('pex-gui')
-//var filterDataBuf = fs.readFileSync(__dirname + '/../data/sciana.vtg')
-
-//metal5.vtg
-//86,84,71,0,
-//231,3,  0,0,0,0,0,0,0,0,    1,
-//    22,0,   2,100,100,0,0,0,0,0,    2,
-//        14,0,   15,0,0,0,0,0,0,0,   1,
-//            6,0,    2,0,0,0,0,255,255,255,  1,
-//                0,0,
-//        33,0,   255,175,0,0,0,0,0,0,    3,
-//            4,0,    2,6,150,1,1,1,0,0,      1,
-//                0,0,
-//           3,0,    1,1,255,1,1,0,0,0,  1,
-//                0,0,
-//            0,0
-//var filterDataBuf = fs.readFileSync(__dirname + '/../data/metal_plazma.vtg')
-var filterDataBuf = fs.readFileSync(__dirname + '/../data/sciana.vtg')
-//var filterDataBuf = fs.readFileSync(__dirname + '/../data/hypno_paski.vtg')
-//var filterDataBuf = fs.readFileSync(__dirname + '/../data/czerwone_kafelki.vtg')
-var texData = parseVTG(filterDataBuf)
-var Window = require('pex-sys/Window')
-var pixelRatio = 1.5;
-Window.create({
-    settings: {
-        width: 1680,
-        height: 1280,
-        debug: true,
-        pixelRatio: 2
-    },
-    init: function() {
-        var ctx = this.getContext()
-        var gui = this.gui = new GUI(ctx, this.getWidth(), this.getHeight(), pixelRatio)
-
-        var levelDepth = [0,0,0,0,0,0,0,0,0]
-
-        function addFilterGraph(fd, level) {
-            if (!fd) return
-            var tex = ctx.createTexture2D(new Uint8Array(fd.pixels), texData.width, texData.height, { format: ctx.getGL().RGB })
-            gui.addTexture2D(FilterNameMap[fd.id], tex).setPosition(10 + level * 170 * pixelRatio, 10 + levelDepth[level] * 190 * pixelRatio)
-            levelDepth[level]++
-
-            console.log('tex:' + fd.id, FilterNameMap[fd.id], 'sources:', fd.sources.length)
-            fd.sources.map(function(childFd) {
-                addFilterGraph(childFd, level + 1)
-            })
-        }
-
-        addFilterGraph(texData, 0, 0)
-
-        var numPreviews = 0;
-        var numColumns = 12;
-
-        function addFilter(name, fd) {
-            if (!fd) return
-            var tex = ctx.createTexture2D(new Uint8Array(fd.pixels), texData.width, texData.height, { format: ctx.getGL().RGB })
-            gui.addTexture2D(name, tex)
-                .setPosition(
-                    10 + (numPreviews % numColumns) * 170 * pixelRatio,
-                    10 + (numPreviews / numColumns | 0) * 190 * pixelRatio)
-            numPreviews++;
-        }
-
-        fs.readdirSync(__dirname + '/../data').map(function(file, i) {
-            return
-            console.log(file)
-            setTimeout(function() {
-                var filterDataBuf = fs.readFileSync(__dirname + '/../data/' + file) //OK
-                var texData = parseVTG(filterDataBuf)
-                addFilter(file, texData)
-            }, i * 500)
-        })
-
-    },
-    draw: function() {
-        var ctx = this.getContext()
-        ctx.setClearColor(0.2, 0.2, 0.2, 1.0)
-        ctx.clear(ctx.COLOR_BIT)
-        this.gui.draw()
-    }
-
-})
