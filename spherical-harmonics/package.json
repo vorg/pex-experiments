@@ -6,16 +6,19 @@
     "beefy": "^2.1.5",
     "browserify": "^12.0.1",
     "glslify-promise": "^1.0.1",
+    "grid-cells": "^1.1.0",
     "is-browser": "^2.0.1",
-    "primitive-cube": "^1.0.2",
+    "normals": "^1.1.0",
     "pex-cam": "^1.0.0-beta.2",
     "pex-color": "^1.1.1",
     "pex-context": "^1.2.5",
     "pex-draw": "^1.0.0-beta.2",
     "pex-geom": "^1.0.0-beta.2",
     "pex-io": "^1.1.0",
+    "pex-materials": "^1.1.1",
     "pex-math": "^1.0.0",
-    "pex-sys": "^1.4.0"
+    "pex-sys": "^1.4.0",
+    "primitive-cube": "^1.0.2"
   },
   "scripts": {
     "start": "beefy main.js:main.web.js --open -- -i plask -g glslify-promise/transform",
