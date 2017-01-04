@@ -3,13 +3,12 @@ require('debug').enable('*')
 const log = require('debug')('app')
 const gl = require('pex-gl')(1280, 720, 1)
 const regl = require('regl')(gl)
-const Mat4 = require('pex-math/Mat4')
-const glsl = require('glslify')
 // const R = require('ramda')
 const load = require('pex-io/load')
 const createCamera = require('pex-cam/perspective')
 const createOrbiter = require('pex-cam/orbiter')
 const d3geo = require('d3-geo')
+const drawSolidColor = require('./lib/draw-solid-color')(regl)
 
 const camera = createCamera({
   fov: Math.PI / 3,
@@ -23,129 +22,6 @@ const camera = createCamera({
 
 createOrbiter({
   camera: camera
-})
-
-const drawCube = regl({
-  attributes: {
-    // aPosition: cube.positions,
-    // aNormal: cube.normals
-  },
-  // elements: cube.cells,
-  vert: glsl`
-    #ifdef GL_ES
-    #pragma glslify: transpose = require(glsl-transpose)
-    #endif
-    #pragma glslify: inverse = require(glsl-inverse)
-
-    attribute vec3 aPosition;
-    attribute vec3 aNormal;
-
-    uniform mat4 uProjectionMatrix;
-    uniform mat4 uViewMatrix;
-    uniform mat4 uModelMatrix;
-
-    varying vec3 vNormal;
-
-    void main () {
-      mat4 modelViewMatrix = uViewMatrix * uModelMatrix;
-      mat3 normalMatrix = mat3(transpose(inverse(modelViewMatrix)));
-      vNormal = normalMatrix * aNormal;
-      gl_Position = uProjectionMatrix * modelViewMatrix * vec4(aPosition, 1.0);
-    }
-  `,
-  frag: `
-    #ifdef GL_ES
-    precision highp float;
-    #endif
-
-    varying vec3 vNormal;
-
-    void main () {
-      gl_FragColor.rgb = vNormal * 0.5 + 0.5;
-      gl_FragColor.a = 1.0;
-    }
-  `,
-  uniforms: {
-    uProjectionMatrix: () => camera.projectionMatrix,
-    uViewMatrix: () => camera.viewMatrix,
-    uModelMatrix: Mat4.create()
-  }
-})
-
-const drawPoints = regl({
-  attributes: {
-    aPosition: (_, props) => props.points
-  },
-  count: (_, props) => props.points.length,
-  vert: glsl`
-    attribute vec3 aPosition;
-
-    uniform mat4 uProjectionMatrix;
-    uniform mat4 uViewMatrix;
-    uniform mat4 uModelMatrix;
-
-    void main () {
-      mat4 modelViewMatrix = uViewMatrix * uModelMatrix;
-      gl_Position = uProjectionMatrix * modelViewMatrix * vec4(aPosition, 1.0);
-      gl_PointSize = 1.0;
-    }
-  `,
-  frag: `
-    #ifdef GL_ES
-    precision highp float;
-    #endif
-
-    uniform vec4 uColor;
-
-    void main () {
-      gl_FragColor = uColor;
-    }
-  `,
-  primitive: 'points',
-  uniforms: {
-    uColor: (_, props) => props.color,
-    uProjectionMatrix: () => camera.projectionMatrix,
-    uViewMatrix: () => camera.viewMatrix,
-    uModelMatrix: Mat4.create()
-  }
-})
-
-const drawLines = regl({
-  attributes: {
-    aPosition: (_, props) => props.points
-  },
-  count: (_, props) => props.points.length,
-  vert: glsl`
-    attribute vec3 aPosition;
-
-    uniform mat4 uProjectionMatrix;
-    uniform mat4 uViewMatrix;
-    uniform mat4 uModelMatrix;
-
-    void main () {
-      mat4 modelViewMatrix = uViewMatrix * uModelMatrix;
-      gl_Position = uProjectionMatrix * modelViewMatrix * vec4(aPosition, 1.0);
-      gl_PointSize = 3.0;
-    }
-  `,
-  frag: `
-    #ifdef GL_ES
-    precision highp float;
-    #endif
-
-    uniform vec4 uColor;
-
-    void main () {
-      gl_FragColor = uColor;
-    }
-  `,
-  primitive: 'line strip',
-  uniforms: {
-    uColor: (_, props) => props.color,
-    uProjectionMatrix: () => camera.projectionMatrix,
-    uViewMatrix: () => camera.viewMatrix,
-    uModelMatrix: Mat4.create()
-  }
 })
 
 load({
@@ -225,8 +101,8 @@ load({
       color: [0.2, 0.2, 0.2, 1],
       depth: 1
     })
-    drawPoints({ points: points3, color: [1, 1, 0, 1] })
-    lines3.forEach((line) => drawLines({ points: line, color: [1, 0.5, 0, 1] }))
-    polygons3.forEach((line) => drawLines({ points: line, color: [0, 1, 0.5, 1] }))
+    drawSolidColor({ points: points3, color: [1, 1, 0, 1], primitive: 'points', camera: camera })
+    lines3.forEach((line) => drawSolidColor({ points: line, color: [1, 0.5, 0, 1], primitive: 'line strip', camera: camera }))
+    polygons3.forEach((line) => drawSolidColor({ points: line, color: [0, 1, 0.5, 1], primitive: 'line strip', camera: camera }))
   })
 })
