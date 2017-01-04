@@ -1,0 +1,28 @@
+{
+  "name": "osm",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Marcin Ignac <marcin.ignac@gmail.com> (http://marcinignac.com/)",
+  "license": "MIT",
+  "dependencies": {
+    "budo": "^9.4.1",
+    "d3-geo": "^1.4.0",
+    "debug": "^2.6.0",
+    "geom-center-and-normalize": "^1.0.1",
+    "glsl-inverse": "^1.0.0",
+    "glsl-transpose": "^1.0.0",
+    "glslify": "^6.0.1",
+    "pex-cam": "github:pex-gl/pex-cam#5449aceeb2f0f09bfb0d2c69697a3e7dab500e58",
+    "pex-geom": "^1.0.0",
+    "pex-gl": "^1.3.0",
+    "pex-io": "^1.3.1",
+    "pex-math": "^1.0.1",
+    "primitive-cube": "^2.0.0",
+    "ramda": "^0.23.0",
+    "regl": "^1.3.0"
+  }
+}
