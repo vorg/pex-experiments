@@ -1,7 +1,7 @@
 'use strict'
 require('debug').enable('*')
 const log = require('debug')('app')
-const gl = require('pex-gl')(1280, 720, 1)
+const gl = require('pex-gl')(1280, 720, 2)
 const regl = require('regl')(gl)
 // const R = require('ramda')
 const load = require('pex-io/load')
@@ -10,15 +10,22 @@ const createOrbiter = require('pex-cam/orbiter')
 const d3geo = require('d3-geo')
 const drawSolidColor = require('./lib/draw-solid-color')(regl)
 const drawBuilding = require('./lib/draw-building')(regl)
+const drawScattering = require('./lib/draw-scattering')(regl)
 const extrudePolygon = require('./local_modules/extrude-polygon')
 const merge = require('./local_modules/geom-merge')
+const createSphere = require('primitive-sphere')
+const toFlatGeometry = require('./local_modules/geom-to-flat-geometry')
+const computeNormals = require('./local_modules/geom-compute-normals')
+
+const sphere = toFlatGeometry(createSphere(10))
+sphere.normals = computeNormals(sphere.positions, sphere.cells)
 
 const camera = createCamera({
   fov: Math.PI / 3,
   aspect: gl.canvas.width / gl.canvas.height,
   near: 0.01,
   far: 100,
-  position: [2, 2, 2],
+  position: [1, 1, 1],
   target: [0, 0, 0],
   up: [0, 1, 0]
 })
@@ -30,7 +37,11 @@ createOrbiter({
 load({
   // map: { json: 'map.geojson' }
   // map: { json: 'somerset.geojson' }
-  map: { json: 'twickenham.geojson' }
+  // map: { json: 'twickenham.geojson' }
+  map: { json: 'poplar.geojson' }
+  // map: { json: 'poznan.geojson' }
+  // map: { json: 'nick.geojson' }
+  // map: { json: 'london.geojson' }
 }, (err, res) => {
   log('loaded', err ? err : '')
   const features = res.map.features
@@ -75,10 +86,12 @@ load({
   // based on http://stackoverflow.com/questions/14492284/center-a-map-in-d3-given-a-geojson-object
   var center = d3geo.geoCentroid(res.map)
   // there is some outlier in twickenham so i hardcoded the position
-  center = [ -0.3291374193783555, 51.44773271153468 ]
+  // center = [ -0.3291374193783555, 51.44773271153468 ]
+  // center = [-0.0844938, 51.5121653]
+  // center = [16.916667, 52.4]
   var scale = 0.1
-  var width = 5
-  var height = 5
+  var width = 10
+  var height = 10
   var offset = [0, 0]
   var projection = d3geo.geoMercator().scale(scale).center(center).translate(offset)
   var path = d3geo.geoPath().projection(projection)
@@ -130,8 +143,11 @@ load({
     })
     drawSolidColor({ points: points3, color: [1, 1, 0, 1], primitive: 'points', camera: camera })
     // lines3.forEach((line) => drawSolidColor({ points: line, color: [1, 0.5, 0, 1], primitive: 'line strip', camera: camera }))
-    drawSolidColor({ points: linesCombined, color: [1, 0.5, 0, 1], primitive: 'lines', camera: camera })
+    // drawSolidColor({ points: linesCombined, color: [1, 0.5, 0, 1], primitive: 'lines', camera: camera })
+    // drawSolidColor({ points: linesCombined, color: [0.3, 0.85, 1, 1], primitive: 'lines', camera: camera })
+    drawScattering({ geom: { positions: linesCombined }, color: [0.3/2, 0.7/2, 0.4/2, 1], primitive: 'lines', camera: camera })
     // polygons3.forEach((polygon) => drawBuilding({ geom: polygon, color: [0, 1, 0.5, 1], primitive: 'triangles', camera: camera }))
-    drawBuilding({ geom: polygonsCombined, color: [0, 1, 0.5, 1], primitive: 'triangles', camera: camera })
+    drawScattering({ geom: polygonsCombined, color: [0, 0, 0, 1], primitive: 'triangles', camera: camera })
+    drawScattering({ geom: sphere, color: [0, 0, 0, 1], primitive: 'triangles', camera: camera })
   })
 })

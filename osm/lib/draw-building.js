@@ -36,6 +36,9 @@ module.exports = function createDrawSolidColor (regl) {
       void main () {
         gl_FragColor = uColor;
         gl_FragColor.rgb = vNormalView * 0.5 + 0.5;
+        // if (length(vNormalView) > 0.0) {
+          // gl_FragColor.rgb = vec3(0.5 + 0.5 * max(0.0, dot(vNormalView, normalize(vec3(1.0)))));
+        // }
       }
     `,
     primitive: (_, props) => props.primitive,
