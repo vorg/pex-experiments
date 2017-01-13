@@ -16,6 +16,21 @@ const merge = require('./local_modules/geom-merge')
 const createSphere = require('primitive-sphere')
 const toFlatGeometry = require('./local_modules/geom-to-flat-geometry')
 const computeNormals = require('./local_modules/geom-compute-normals')
+const GUI = require('./local_modules/pex-gui')
+const Vec2 = require('pex-math/Vec2')
+
+const gui = new GUI(regl, 1280, 720, 1)
+gui.addHeader('settings')
+gl.canvas.addEventListener('mousedown', (e) => {
+  gui.onMouseDown(e)
+})
+gl.canvas.addEventListener('mousemove', (e) => {
+  gui.onMouseDrag(e)
+})
+gl.canvas.addEventListener('mouseup', (e) => {
+  gui.onMouseUp(e)
+})
+
 
 const sphere = toFlatGeometry(createSphere(10))
 sphere.normals = computeNormals(sphere.positions, sphere.cells)
@@ -35,13 +50,7 @@ createOrbiter({
 })
 
 load({
-  // map: { json: 'map.geojson' }
-  // map: { json: 'somerset.geojson' }
-  // map: { json: 'twickenham.geojson' }
-  map: { json: 'poplar.geojson' }
-  // map: { json: 'poznan.geojson' }
-  // map: { json: 'nick.geojson' }
-  // map: { json: 'london.geojson' }
+  map: { json: 'map.geojson' }
 }, (err, res) => {
   log('loaded', err ? err : '')
   const features = res.map.features
@@ -73,7 +82,7 @@ load({
         if (feature.properties.building) {
           height = Math.max(height, 1)
         }
-        height /= 500
+        height /= 100
         coords.height = height
         polygons.push(coords)
         coords.forEach((loop) => loop.forEach((p) => points.push(p)))
@@ -85,10 +94,12 @@ load({
 
   // based on http://stackoverflow.com/questions/14492284/center-a-map-in-d3-given-a-geojson-object
   var center = d3geo.geoCentroid(res.map)
-  // there is some outlier in twickenham so i hardcoded the position
-  // center = [ -0.3291374193783555, 51.44773271153468 ]
-  // center = [-0.0844938, 51.5121653]
-  // center = [16.916667, 52.4]
+  center = [0, 0]
+  points.forEach((p) => {
+    Vec2.add(center, p)
+  })
+  Vec2.scale(center, 1 / points.length)
+
   var scale = 0.1
   var width = 10
   var height = 10
@@ -131,23 +142,56 @@ load({
   const polygonsCombined = merge(polygons3.slice(0, 10000))
   console.timeEnd('merge')
   polygonsCombined.cells = null
-  // polygonsCombined.positions = regl.buffer(polygonsCombined.positions)
-  // polygonsCombined.normals = regl.buffer(polygonsCombined.normals)
 
   console.log('about to draw', 'points', points.length, lines3.length, polygons3.length, 'poly verts', polygonsCombined.positions.length)
 
+  var lights = [
+    { position: [0, 0, 0], color: [0.2, 0.5, 0.8, 1] }
+  ]
+
+  gui.addParam('Light 0', lights[0], 'color', { type: 'color' })
+
   regl.frame(() => {
     regl.clear({
-      color: [0.2, 0.2, 0.2, 1],
+      color: [1.0, 0.0, 0.0, 1],
       depth: 1
     })
-    drawSolidColor({ points: points3, color: [1, 1, 0, 1], primitive: 'points', camera: camera })
-    // lines3.forEach((line) => drawSolidColor({ points: line, color: [1, 0.5, 0, 1], primitive: 'line strip', camera: camera }))
-    // drawSolidColor({ points: linesCombined, color: [1, 0.5, 0, 1], primitive: 'lines', camera: camera })
-    // drawSolidColor({ points: linesCombined, color: [0.3, 0.85, 1, 1], primitive: 'lines', camera: camera })
-    drawScattering({ geom: { positions: linesCombined }, color: [0.3/2, 0.7/2, 0.4/2, 1], primitive: 'lines', camera: camera })
-    // polygons3.forEach((polygon) => drawBuilding({ geom: polygon, color: [0, 1, 0.5, 1], primitive: 'triangles', camera: camera }))
-    drawScattering({ geom: polygonsCombined, color: [0, 0, 0, 1], primitive: 'triangles', camera: camera })
-    drawScattering({ geom: sphere, color: [0, 0, 0, 1], primitive: 'triangles', camera: camera })
+
+    lights.forEach((light) => {
+      // streets
+      drawScattering({
+        geom: { positions: linesCombined },
+        primitive: 'lines',
+        camera: camera,
+        lightPos: light.position,
+        lightColor: light.color,
+        ambientColor: [0.3 / 2, 0.7 / 2, 0.4 / 2, 1],
+        albedoColor: [0.8, 0.3, 0.7, 1.0]
+      })
+
+      // buildings
+      drawScattering({
+        geom: polygonsCombined,
+        primitive: 'triangles',
+        camera: camera,
+        lightPos: light.position,
+        lightColor: light.color,
+        ambientColor: [0, 0, 0, 1],
+        albedoColor: [0.8, 0.3, 0.7, 1.0]
+      })
+
+      // background sky
+      drawScattering({
+        geom: sphere,
+        primitive: 'triangles',
+        camera: camera,
+        lightPos: light.position,
+        lightColor: light.color,
+        ambientColor: [0, 0, 0, 1],
+        albedoColor: [0.8, 0.3, 0.7, 1.0]
+      })
+    })
+
+    gui.draw()
   })
 })

@@ -32,10 +32,11 @@ module.exports = function createDrawSolidColor (regl) {
       precision highp float;
       #endif
 
-      uniform vec4 uColor;
-      uniform vec4 uDiffuseColor;
-      uniform vec3 uCameraPos;
       uniform vec3 uLightPos;
+      uniform vec4 uLightColor;
+      uniform vec4 uAmbientColor;
+      uniform vec4 uAlbedoColor;
+      uniform vec3 uCameraPos;
       uniform float uScattering;
 
       // varying vec3 vNormalView;
@@ -65,23 +66,24 @@ module.exports = function createDrawSolidColor (regl) {
         float l = length(dir);
         dir /= l;
 
-        vec3 color = pow(uColor.rgb, vec3(2.2));
+        vec3 ambientColor = pow(uAmbientColor.rgb, vec3(2.2));
+        vec3 lightColor = pow(uLightColor.rgb, vec3(2.2));
+        vec3 albedoColor = pow(uAlbedoColor.rgb, vec3(2.2));
+        vec3 color = ambientColor + albedoColor * lightColor * InScatter(uCameraPos, dir, uLightPos, l) * uScattering;
 
-        vec3 diffuse = pow(uDiffuseColor.rgb, vec3(2.2));
-        vec3 scatter = color + diffuse * pow(vec3(0.2, 0.5, 0.8), vec3(2.2)) * InScatter(uCameraPos, dir, uLightPos, l) * uScattering;
-
-        gl_FragColor.rgb = pow(scatter.rgb, vec3(1.0/2.2));
+        gl_FragColor.rgb = pow(color.rgb, vec3(1.0/2.2));
         gl_FragColor.a = 1.0;
       }
     `,
     primitive: (_, props) => props.primitive,
     uniforms: {
-      uColor: (_, props) => props.color,
       uProjectionMatrix: (_, props) => props.camera.projectionMatrix,
       uViewMatrix: (_, props) => props.camera.viewMatrix,
       uModelMatrix: Mat4.create(),
-      uDiffuseColor: [0.8, 0.3, 0.7, 1.0],
-      uLightPos: (_, props) => [0, 0.0, 0],
+      uLightPos: regl.prop('lightPos'),
+      uLightColor: regl.prop('lightColor'),
+      uAmbientColor: regl.prop('ambientColor'),
+      uAlbedoColor: regl.prop('albedoColor'),
       uCameraPos: (_, props) => props.camera.position,
       uScattering: 0.03
     }
