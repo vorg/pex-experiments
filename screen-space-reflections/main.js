@@ -35,17 +35,17 @@ var DPI = Platform.isBrowser ? 1 : 2;
 
 sys.Window.create({
   settings: {
-    width: 512,
-    height: 512*window.innerHeight / window.innerWidth,
+    width: 1024 * DPI,
+    height: 512 * DPI,
     type: '3d',
-    highdpi: 1
+    highdpi: DPI
     //fullscreen: Platform.isBrowser ? true : false
   },
   init: function() {
     if (Platform.isBrowser) {
         console.log('WEBGL_depth_texture', this.gl.getExtension('WEBGL_depth_texture'));
-        console.log('OES_texture_float', this.gl.getExtension('OES_texture_half_float'));
-        console.log('OES_texture_float_linear', this.gl.getExtension('OES_texture_half_float_linear'));
+        console.log('OES_texture_float', this.gl.getExtension('OES_texture_float'));
+        console.log('OES_texture_float_linear', this.gl.getExtension('OES_texture_float_linear'));
     }
     this.showNormals = new ShowNormals();
     this.diffuse = new BlinnPhong({ wrap: 1 });
@@ -54,12 +54,7 @@ sys.Window.create({
     this.showPosition = new ShowPosition();
     this.showDepth = new ShowDepth();
 
-    var minHue = geom.randomFloat(0.0, 0.6)
-    var maxHue = Math.min(1, geom.randomFloat(minHue + 0.1, 0.5))
-    var maxCubes = geom.randomInt(4, 14)
-
-
-    //geom.randomSeed(50);
+    geom.randomSeed(50);
 
     var cube = new Cube();
     cube = new Box().dooSabin().catmullClark();
@@ -75,7 +70,7 @@ sys.Window.create({
     this.scene = [m1, m2, m3];
     this.floor = new Mesh(new Cube(7, 0.01, 7), this.showNormals);
     this.instances = [];
-    for(var i=0; i<maxCubes; i++) {
+    for(var i=0; i<50; i++) {
         var pos = geom.randomVec3().scale(3);
         pos.y *= 0.1;
         var s = geom.randomFloat(0.1, 1);
@@ -86,15 +81,15 @@ sys.Window.create({
             scale: scale,
             t: pos.y,
             uniforms: {
-                diffuseColor: Color.fromHSL(geom.randomFloat(minHue, maxHue), 0.85, 0.5),
-                specularColor: Color.fromHSL(geom.randomFloat(minHue, maxHue), 0.85, 0.15),
+                diffuseColor: Color.fromHSL(geom.randomFloat(0, 1), 0.85, 0.5),
+                specularColor: Color.fromHSL(geom.randomFloat(0, 1), 0.85, 0.15),
                 //diffuseColor: Color.Red,
                 //ambientColor: Color.Red,
                 //specularColor: Color.Red
             }
         })
     }
-    for(var i=0; i<maxCubes; i++) {
+    for(var i=0; i<20; i++) {
         var pos = geom.randomVec3().scale(7);
         //pos.y *= 0.1;
         pos.x = -4;
@@ -107,13 +102,13 @@ sys.Window.create({
             scale: scale,
             t: pos.y,
             uniforms: {
-                diffuseColor: Color.fromHSL(geom.randomFloat(minHue, maxHue), 0.85, 0.5),
-                specularColor: Color.fromHSL(geom.randomFloat(minHue, maxHue), 0.85, 0.15),
+                diffuseColor: Color.fromHSL(geom.randomFloat(0, 1), 0.85, 0.5),
+                specularColor: Color.fromHSL(geom.randomFloat(0, 1), 0.85, 0.15),
                 ambientColor: Color.Black,
             }
         })
     }
-    for(var i=0; i<maxCubes; i++) {
+    for(var i=0; i<20; i++) {
         var pos = geom.randomVec3().scale(7);
         //pos.y *= 0.1;
         pos.x = 4;
@@ -126,8 +121,8 @@ sys.Window.create({
             scale: scale,
             t: pos.y,
             uniforms: {
-                diffuseColor: Color.fromHSL(geom.randomFloat(minHue, maxHue), 0.85, 0.5),
-                specularColor: Color.fromHSL(geom.randomFloat(minHue, maxHue), 0.85, 0.15),
+                diffuseColor: Color.fromHSL(geom.randomFloat(0, 1), 0.85, 0.5),
+                specularColor: Color.fromHSL(geom.randomFloat(0, 1), 0.85, 0.15),
                 ambientColor: Color.Black,
             }
         })
@@ -145,13 +140,13 @@ sys.Window.create({
             scale: scale,
             t: pos.y,
             uniforms: {
-                diffuseColor: Color.fromHSL(geom.randomFloat(minHue, maxHue), 0.85, 0.5),
-                specularColor: Color.fromHSL(geom.randomFloat(minHue, maxHue), 0.85, 0.15),
+                diffuseColor: Color.fromHSL(geom.randomFloat(0, 1), 0.85, 0.5),
+                specularColor: Color.fromHSL(geom.randomFloat(0, 1), 0.85, 0.15),
                 ambientColor: Color.Black,
             }
         })
     }
-    for(var i=0; i<maxCubes; i++) {
+    for(var i=0; i<20; i++) {
         var pos = geom.randomVec3().scale(7);
         //pos.y *= 0.1;
         pos.y = 7;
@@ -163,8 +158,8 @@ sys.Window.create({
             scale: scale,
             t: pos.y,
             uniforms: {
-                diffuseColor: Color.fromHSL(geom.randomFloat(minHue, maxHue), 0.85, 0.5),
-                specularColor: Color.fromHSL(geom.randomFloat(minHue, maxHue), 0.85, 0.15),
+                diffuseColor: Color.fromHSL(geom.randomFloat(0, 1), 0.85, 0.5),
+                specularColor: Color.fromHSL(geom.randomFloat(0, 1), 0.85, 0.15),
                 ambientColor: Color.Black,
             }
         })
@@ -183,10 +178,10 @@ sys.Window.create({
 
     //create textures for offscreen rendering
     var colorBuf  = this.colorBuf = Texture2D.create(rtWidth, rtHeight, { format: this.gl.RGBA, type: this.gl.UNSIGNED_BYTE });
-    var normalBuf = this.normalBuf = Texture2D.create(rtWidth, rtHeight, { bpp: 16 });
+    var normalBuf = this.normalBuf = Texture2D.create(rtWidth, rtHeight, { bpp: 32 });
     var depthBuf  = this.depthBuf = Texture2D.create(rtWidth, rtHeight, { format: this.gl.DEPTH_COMPONENT, type: this.gl.UNSIGNED_SHORT });
-    var depthBuf2  = this.depthBuf2 = Texture2D.create(rtWidth, rtHeight, { bpp: 16 });
-    var positionBuf  = this.positionBuf = Texture2D.create(rtWidth, rtHeight, { bpp: 16 });
+    var depthBuf2  = this.depthBuf2 = Texture2D.create(rtWidth, rtHeight, { bpp: 32 });
+    var positionBuf  = this.positionBuf = Texture2D.create(rtWidth, rtHeight, { bpp: 32 });
 
     this.colorRenderTarget = new RenderTarget(rtWidth, rtHeight, { color: colorBuf, depth: depthBuf });
     this.depthRenderTarget = new RenderTarget(rtWidth, rtHeight, { color: depthBuf2, depth: depthBuf });
@@ -206,21 +201,15 @@ sys.Window.create({
     this.ssrShader = Program.load('./fx/SSR.glsl');
 
     this.on('mouseMoved', function(e) {
-        var w = Platform.isBrowser ? window.innerWidth : this.width;
-        var h = Platform.isBrowser ? window.innerHeight : this.height;
       this.camera.setPosition(new Vec3(
-        5 * (e.x - w/2)/w,
-        3 - 2 * (e.y - h/2)/h,
+        5 * (e.x - this.width/2)/this.width,
+        2 - 2 * (e.y - this.height/2)/this.height,
         6
       ));
     }.bind(this));
   },
   draw: function() {
     glu.clearColorAndDepth(Color.Red);
-
-    if (!this.ssrShader.ready) {
-        return;
-    }
 
     this.colorRenderTarget.bind();
     glu.enableDepthReadAndWrite(true);
@@ -240,7 +229,6 @@ sys.Window.create({
     this.floor.setMaterial(this.showNormals);
     this.floor.draw(this.camera);
     this.normalRenderTarget.unbind();
-
 
     this.depthRenderTarget.bind();
     glu.enableDepthReadAndWrite(true, false);

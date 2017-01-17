@@ -10,7 +10,9 @@ varying vec2 vTexCoord;
 void main() {
   float tx = position.x * 0.5 + 0.5; //-1 -> 0, 1 -> 1
   float ty = -position.y * 0.5 + 0.5; //-1 -> 1, 1 -> 0
+  //(x + 0)/sw * 2 - 1, (x + w)/sw * 2 - 1
   float x = (pixelPosition.x + pixelSize.x * tx)/screenSize.x * 2.0 - 1.0;  //0 -> -1, 1 -> 1
+  //1.0 - (y + h)/sh * 2, 1.0 - (y + h)/sh * 2
   float y = 1.0 - (pixelPosition.y + pixelSize.y * ty)/screenSize.y * 2.0;  //0 -> 1, 1 -> -1
   gl_Position = vec4(x, y, 0.0, 1.0);
   vTexCoord = texCoord;
@@ -41,6 +43,20 @@ float readDepth(sampler2D depthMap, vec2 coord) {
   float z_n = 2.0 * z_b - 1.0;
   float z_e = 2.0 * near * far / (far + near - z_n * (far - near));
   return z_e;
+  //return near + (far - near) * z_b;
+  //return z_b;
+  //float depth = z_b;
+  //float depth = texture2D(depthMap, coord).r;
+  //float A = projectionMatrix[2].z;
+  //float B = projectionMatrix[3].z;
+  //return 0.5*(-A*depth + B) / depth + 0.5;
+  //float Znear = near;
+  //float Zfar = far;
+  //float Q  = Zfar / ( Zfar - Znear );
+  //float inv_Zfar = 1.0 / Zfar;
+  //float depth = texture2D(depthMap, coord).r;
+  //float linearDepth = inv_Zfar / (Q - depth);
+  //return linearDepth;
 }
 
 vec2 viewSpaceToScreenSpaceTexCoord(vec3 p) {
@@ -77,18 +93,15 @@ vec3 reconstructPositionFromDepth(vec2 texCoord, float z) {
 }
 
 void main() {
-  vec4 color = texture2D(colorMap, vTexCoord) * 0.8;
+  vec4 color = texture2D(colorMap, vTexCoord);
   float normalizedDepth = texture2D(depthMap, vTexCoord).r;
   float depth = readDepth(depthMap, vTexCoord);
-  //if (depth > 15.0) {
-  //    gl_FragColor = vec4(0.0);
-  //    return;
-  //}
   vec3 normal = normalize(vec3(texture2D(normalMap, vTexCoord)) * 2.0 - 1.0);
   vec3 position = texture2D(positionMap, vTexCoord).xyz;
 
   //raymarch only surfaces marked in red
-  //if (color.r > 0.99 && length(color) > 0.99) {
+  //if (color.r > -1.0) {
+  if (color.r > 0.99 && length(color) > 0.99) {
     vec3 basePos = reconstructPositionFromDepth(vTexCoord, depth);
     basePos = position;
     vec3 pos = basePos;
@@ -115,13 +128,20 @@ void main() {
     float dist = distance(pos, basePos);
     float fade = 1.0 - clamp(dist, 0.0, 2.0)/2.0;
     fade = 1.0;
-    color += 0.2 * (vec4(0.2) + fade * 0.5 * reflectionColor);
-    color = (vec4(0.2) + fade * 0.5 * reflectionColor);
+    color = vec4(0.2) + fade * 0.5 * reflectionColor;
 
     if (color.r > 0.99 && length(color) > 0.99) {
       color = vec4(0.0);
     }
-  //}
+
+    //vec2 screenCoord = viewSpaceToScreenSpaceTexCoord(basePos);
+    //vec3 viewPos = screenSpaceTexCoordToViewSpace(screenCoord);
+    //color += vec4(normalize(basePos).xy - normalize(viewPos).xy, 0.0, 1.0);
+
+    //color = vec4(position - basePos, 1.0);
+    //color = vec4(depth/20.0);
+    //color = vec4(position/10.0, 1.0);
+  }
 
   gl_FragColor = color;
 }
