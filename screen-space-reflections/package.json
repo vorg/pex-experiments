@@ -1,0 +1,24 @@
+{
+  "name": "screenSpaceReflections",
+  "version": "0.0.1",
+  "private": true,
+  "dependencies": {
+    "brfs": "1.2.0",
+    "browser-sync": "1.3.2",
+    "browserify": "5.9.1",
+    "pex-color": "*",
+    "pex-fx": "*",
+    "pex-gen": "*",
+    "pex-geom": "*",
+    "pex-glu": "*",
+    "pex-gui": "*",
+    "pex-helpers": "*",
+    "pex-materials": "*",
+    "pex-sys": "*",
+    "vinyl-source-stream": "0.1.1",
+    "watchify": "1.0.1"
+  },
+  "scripts": {
+    "watch": "./lib/watchscript.js"
+  }
+}
